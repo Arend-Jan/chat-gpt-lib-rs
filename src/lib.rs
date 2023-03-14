@@ -1,11 +1,5 @@
-mod model;
+pub mod client;
+pub mod models;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn does_it_work() {
-        assert_eq!(4, 4);
-    }
-}
+pub use client::{ChatGPTClient, ChatInput, ChatResponse};
+pub use models::{LogitBias, Model};
