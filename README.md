@@ -47,7 +47,7 @@ let response = client.chat(chat_input).await.unwrap();
 The response will be a 'ChatResponse' structure containing the API response data.
 
 ## Documentation
-For more details about the request parameters and response structure, refer to the (https://beta.openai.com/docs/api-reference/chat/create)[OpenAI API documentation].
+For more details about the request parameters and response structure, refer to the [https://beta.openai.com/docs/api-reference/chat/create](OpenAI API documentation).
 
 ## License
 t.b.d.
