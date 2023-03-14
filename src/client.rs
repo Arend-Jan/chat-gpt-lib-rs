@@ -1,6 +1,6 @@
 use crate::models::Model;
 use crate::models::LogitBias;
-use reqwest::{Client, Response, Error};
+use reqwest::{Client, Error};
 use serde::{Deserialize, Serialize};
 
 pub struct ChatGPTClient {
