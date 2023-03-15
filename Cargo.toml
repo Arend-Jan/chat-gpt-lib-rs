@@ -2,6 +2,13 @@
 name = "chat-gpt-lib-rs"
 version = "0.1.0"
 edition = "2021"
+description = "A Rust library for interacting with OpenAI's ChatGPT API, providing a simple interface to make API requests and handle responses."
+license = "Apache-2.0"
+repository = "https://github.com/Arend-Jan/chat-gpt-lib-rs"
+authors = ["Arend-Jan Oosterveld <arendjan.oosterveld@gmail.com>"]
+readme = "README.md"
+keywords = ["openai", "chatgpt", "gpt", "api", "client"]
+categories = ["api-bindings", "natural-language-processing"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
