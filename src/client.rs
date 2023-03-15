@@ -1,5 +1,4 @@
-use crate::models::LogitBias;
-use crate::models::Model;
+use crate::models::{Model, Role, LogitBias};
 use log::debug;
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -87,7 +86,7 @@ pub struct Choice {
 /// Represents a message in the chat API call.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Message {
-    pub role: String,
+    pub role: Role,
     pub content: String,
 }
 
@@ -140,7 +139,7 @@ impl ChatGPTClient {
     /// # Examples
     ///
     /// ```
-    /// use chat_gpt_lib_rs::{ChatGPTClient, ChatInput, Message, Model};
+    /// use chat_gpt_lib_rs::{ChatGPTClient, ChatInput, Message, Model, Role};
     ///
     /// async fn example() {
     ///     let chat_gpt = ChatGPTClient::new("your_api_key", "https://api.openai.com");
@@ -148,12 +147,12 @@ impl ChatGPTClient {
     ///         model: Model::Gpt_4,
     ///         messages: vec![
     ///             Message {
-    ///                 role: "system".to_string(),
+    ///                 role: Role::System,
     ///                 content: "You are a helpful assistant.".to_string(),
     ///             },
     ///             Message {
-    ///                 role: "user".to_string(),
-    ///                 content: "Who won the world series in 2020?".to_string(),
+    ///                 role: Role::User,
+    ///                 content: "Who is the best field hockey player in the world".to_string(),
     ///             },
     ///         ],
     ///         ..Default::default()
