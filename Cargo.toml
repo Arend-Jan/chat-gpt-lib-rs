@@ -8,7 +8,7 @@ repository = "https://github.com/Arend-Jan/chat-gpt-lib-rs"
 authors = ["Arend-Jan Oosterveld <arendjan.oosterveld@gmail.com>"]
 readme = "README.md"
 keywords = ["openai", "chatgpt", "gpt", "api", "client"]
-categories = ["api-bindings", "natural-language-processing"]
+categories = ["api-bindings", "text-processing", "web-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
