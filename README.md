@@ -1,3 +1,8 @@
+[![Crates.io](https://img.shields.io/crates/v/chat-gpt-lib-rs.svg)](https://crates.io/crates/chat-gpt-lib-rs)
+[![Documentation](https://docs.rs/chat-gpt-lib-rs/badge.svg)](https://docs.rs/chat-gpt-lib-rs/)
+[![Codecov](https://codecov.io/github/arend-jan/chat-gpt-lib-rs/coverage.svg?branch=main)](https://codecov.io/gh/arend-jan/chat-gpt-lib-rs)
+[![Dependency status](https://deps.rs/repo/github/arend-jan/chat-gpt-lib-rs/status.svg)](https://deps.rs/repo/github/arend-jan/chat-gpt-lib-rs)
+
 # ChatGPT Rust Library
 A Rust library for interacting with OpenAI's ChatGPT API. This library simplifies the process of making requests to the ChatGPT API and parsing responses.
 
