@@ -44,7 +44,6 @@ impl FromStr for Model {
     }
 }
 
-
 /// `LogitBias` struct represents the logit bias used in API calls.
 ///
 /// The struct contains a HashMap where keys are token IDs and values are biases.
@@ -69,7 +68,6 @@ pub enum Role {
     Assistant,
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,7 +78,10 @@ mod tests {
     fn test_from_str_gpt3_5turbo() {
         let input = "gpt-3.5-turbo";
         let model: Result<Model, ()> = Model::from_str(input);
-        assert!(model.is_ok(), "Failed to parse the gpt-3.5-turbo model name");
+        assert!(
+            model.is_ok(),
+            "Failed to parse the gpt-3.5-turbo model name"
+        );
         assert_eq!(model.unwrap(), Model::Gpt3_5Turbo);
     }
 
@@ -140,7 +141,7 @@ mod tests {
         let deserialized_model: Model = serde_json::from_str(model_json).unwrap();
         assert_eq!(deserialized_model, Model::Gpt3_5Turbo);
     }
-   
+
     // Test the deserialization of a JSON string to a `Model` enum variant for Gpt3_5Turbo.
     #[test]
     fn test_deserialize_gpt4() {
@@ -148,6 +149,4 @@ mod tests {
         let deserialized_model: Model = serde_json::from_str(model_json).unwrap();
         assert_eq!(deserialized_model, Model::Gpt_4);
     }
-
 }
-
