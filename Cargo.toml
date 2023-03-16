@@ -26,8 +26,7 @@ tokio = { version = "1.26", features = ["full"] }
 
 [dev-dependencies]
 dotenvy = "0.15"
-tokio = { version = "1", features = ["full"] }
 console = "0.15.5"
 indicatif = "0.17.3"
-openssl = { version = "0.10", features = ["vendored"] } # for msrv 
+openssl = { version = "0.10.46", features = ["vendored"] } # for msrv 
 serde_urlencoded = "0.7.1" # for msrv
