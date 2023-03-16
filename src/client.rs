@@ -100,8 +100,8 @@ pub enum ChatGPTError {
 impl fmt::Display for ChatGPTError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ChatGPTError::RequestFailed(message) => write!(f, "{}", message),
-            ChatGPTError::Reqwest(error) => write!(f, "Reqwest error: {}", error),
+            ChatGPTError::RequestFailed(message) => write!(f, "{message}"),
+            ChatGPTError::Reqwest(error) => write!(f, "Reqwest error: {error}"),
         }
     }
 }
@@ -191,8 +191,7 @@ impl ChatGPTClient {
             let body = response.text().await?;
 
             let error_message = format!(
-                "Request failed with status code: {}\nHeaders: {:?}\nBody: {}",
-                status_code, headers, body
+                "Request failed with status code: {status_code}\nHeaders: {headers:?}\nBody: {body}"
             );
             Err(ChatGPTError::RequestFailed(error_message))
         }
