@@ -9,7 +9,7 @@ authors = ["Arend-Jan Oosterveld <arendjan.oosterveld@gmail.com>"]
 readme = "README.md"
 keywords = ["openai", "chatgpt", "gpt", "api", "client"]
 categories = ["api-bindings", "text-processing", "web-programming"]
-rust-version = "1.60.0"  # MSRV
+rust-version = "1.68.0"  # MSRV
 
 # Add the example configuration
 [[example]]
@@ -30,4 +30,3 @@ console = "0.15.5"
 indicatif = "0.17.3"
 openssl = { version = "0.10.46", features = ["vendored"] } # for msrv 
 serde_urlencoded = "0.7.1" # for msrv
-openssl_sys = "0.9.81"
