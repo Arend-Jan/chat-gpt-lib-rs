@@ -30,7 +30,6 @@ use std::time::Duration;
 /// For an enhanced experience with icons, the terminal must use Nerd Fonts. This requirement
 /// enables the program to display icons alongside text. https://www.nerdfonts.com/
 
-
 // The main function, which is asynchronous due to the API call
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -40,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get the API key and icon usage setting from the environment variables
     let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not found in .env");
 
-    // Add USE_ICONS=true to your .env file, if your terminal is running with a 
+    // Add USE_ICONS=true to your .env file, if your terminal is running with a
     // Nerd Font, so you get some pretty icons
     let use_icons = env::var("USE_ICONS")
         .unwrap_or_else(|_| "false".to_string())
