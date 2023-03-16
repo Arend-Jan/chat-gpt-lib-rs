@@ -84,10 +84,5 @@ jobs:
       uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.msrv }}
-    - name: Install OpenSSL headers
-      run: sudo apt-get update && sudo apt-get install -y libssl-dev
     - name: cargo +${{ matrix.msrv }} check
       run: cargo check
-      env:
-        OPENSSL_DIR: /usr
-        OPENSSL_LIB_DIR: /usr/lib/x86_64-linux-gnu
