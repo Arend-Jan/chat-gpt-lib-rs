@@ -27,7 +27,7 @@ impl Display for Model {
             Model::Gpt3_5Turbo => "gpt-3.5-turbo",
             Model::Gpt_4 => "gpt-4",
         };
-        write!(f, "{}", model_name)
+        write!(f, "{model_name}")
     }
 }
 
