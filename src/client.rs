@@ -122,7 +122,6 @@ impl ChatGPTClient {
     /// * `api_key` - The API key for the ChatGPT API.
     /// * `base_url` - The base URL for the ChatGPT API.
     pub fn new(api_key: &str, base_url: &str) -> Self {
-        env_logger::init();
         Self {
             base_url: base_url.to_string(),
             api_key: api_key.to_string(),
@@ -195,5 +194,47 @@ impl ChatGPTClient {
             );
             Err(ChatGPTError::RequestFailed(error_message))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Helper function to create a ChatGPTClient instance with a dummy API key and base URL
+    fn create_dummy_client() -> ChatGPTClient {
+        ChatGPTClient::new("dummy_api_key", "https://dummy-api-url.com")
+    }
+
+    #[tokio::test]
+    async fn test_chat_gpt_client_new() {
+        let client = create_dummy_client();
+        assert_eq!(client.api_key, "dummy_api_key");
+        assert_eq!(client.base_url, "https://dummy-api-url.com");
+    }
+
+    #[tokio::test]
+    async fn test_chat_gpt_client_chat() {
+        // Please note that this test will not actually make an API call to OpenAI,
+        // but it will test the error handling of the `chat` function.
+        let client = create_dummy_client();
+
+        let input = ChatInput {
+            model: Model::Gpt_4,
+            messages: vec![
+                Message {
+                    role: Role::System,
+                    content: "You are a helpful assistant.".to_string(),
+                },
+                Message {
+                    role: Role::User,
+                    content: "Who is the best field hockey player in the world?".to_string(),
+                },
+            ],
+            ..Default::default()
+        };
+
+        let result = client.chat(input).await;
+        assert!(result.is_err());
     }
 }
