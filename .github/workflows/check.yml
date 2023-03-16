@@ -86,8 +86,8 @@ jobs:
         toolchain: ${{ matrix.msrv }}
     - name: Install OpenSSL headers
       run: sudo apt-get update && sudo apt-get install -y libssl-dev
-    - name: Find OpenSSL path
-      run: echo "OPENSSL_DIR=$(openssl version -d | awk -F '\"' '{print $2}')" >> $GITHUB_ENV
     - name: cargo +${{ matrix.msrv }} check
       run: cargo check
-
+      env:
+        OPENSSL_DIR: /usr
+        OPENSSL_LIB_DIR: /usr/lib/x86_64-linux-gnu
