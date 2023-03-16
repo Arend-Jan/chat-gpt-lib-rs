@@ -84,7 +84,7 @@ pub struct Choice {
 }
 
 /// Represents a message in the chat API call.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Message {
     pub role: Role,
     pub content: String,
