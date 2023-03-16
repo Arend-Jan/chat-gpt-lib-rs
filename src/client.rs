@@ -1,4 +1,4 @@
-use crate::models::{Model, Role, LogitBias};
+use crate::models::{LogitBias, Model, Role};
 use log::debug;
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
@@ -41,7 +41,7 @@ pub struct ChatInput {
 impl Default for ChatInput {
     fn default() -> Self {
         Self {
-            model: Model::Gpt_4, // Set the default model
+            model: Model::Gpt_4,  // Set the default model
             messages: Vec::new(), // Set an empty vector for messages
             temperature: None,
             top_p: None,
