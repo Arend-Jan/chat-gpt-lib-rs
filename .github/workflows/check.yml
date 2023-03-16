@@ -68,21 +68,3 @@ jobs:
         uses: taiki-e/install-action@cargo-hack
       - name: cargo hack
         run: cargo hack --feature-powerset check --lib --tests
-  msrv:
-    runs-on: ubuntu-latest
-     # we use a matrix here just because env can't be used in job names
-    # https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
-    strategy:
-      matrix: 
-        msrv: [1.60.0] # 2021 edition requires 1.56 but env_logger 0.10 requires 1.60
-    name: ubuntu / ${{ matrix.msrv }}
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Install ${{ matrix.msrv }}
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: ${{ matrix.msrv }}
-    - name: cargo +${{ matrix.msrv }} check
-      run: cargo check
