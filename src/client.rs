@@ -265,5 +265,4 @@ mod tests {
         assert_eq!(choice.message.content, "Sample response");
         assert_eq!(choice.finish_reason, "stop");
     }
-
 }
