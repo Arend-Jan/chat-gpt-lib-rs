@@ -149,4 +149,29 @@ mod tests {
         let deserialized_model: Model = serde_json::from_str(model_json).unwrap();
         assert_eq!(deserialized_model, Model::Gpt_4);
     }
+
+    #[test]
+    fn test_logit_bias_struct() {
+        let mut biases = HashMap::new();
+        biases.insert(42, 2.5);
+        biases.insert(123, -1.3);
+
+        let logit_bias = LogitBias { biases };
+
+        assert_eq!(
+            logit_bias.biases.get(&42),
+            Some(&2.5),
+            "Bias for token 42 should be 2.5"
+        );
+        assert_eq!(
+            logit_bias.biases.get(&123),
+            Some(&-1.3),
+            "Bias for token 123 should be -1.3"
+        );
+        assert_eq!(
+            logit_bias.biases.get(&999),
+            None,
+            "Bias for token 999 should not be set"
+        );
+    }
 }

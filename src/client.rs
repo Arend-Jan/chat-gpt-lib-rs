@@ -237,4 +237,33 @@ mod tests {
         let result = client.chat(input).await;
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_usage_struct() {
+        let usage = Usage {
+            prompt_tokens: 10,
+            completion_tokens: 20,
+            total_tokens: 30,
+        };
+
+        assert_eq!(usage.prompt_tokens, 10);
+        assert_eq!(usage.completion_tokens, 20);
+        assert_eq!(usage.total_tokens, 30);
+    }
+
+    #[test]
+    fn test_choice_struct() {
+        let choice = Choice {
+            message: Message {
+                role: Role::Assistant,
+                content: "Sample response".to_string(),
+            },
+            finish_reason: "stop".to_string(),
+        };
+
+        assert_eq!(choice.message.role, Role::Assistant);
+        assert_eq!(choice.message.content, "Sample response");
+        assert_eq!(choice.finish_reason, "stop");
+    }
+
 }
