@@ -1,7 +1,7 @@
 // Import the necessary crates and modules
 use chat_gpt_lib_rs::{ChatGPTClient, ChatInput, Message, Model, Role};
-use std::io::{stdin, stdout, Write};
 use dotenvy::dotenv;
+use std::io::{stdin, stdout, Write};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Retrieve the OpenAI API key from the environment variables
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not found in environment");
-    
+
     // Create a new instance of the ChatGPTClient
     let client = ChatGPTClient::new(&api_key, "https://api.openai.com");
 
@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Define the input for the ChatGPTClient
         let input = ChatInput {
-            model: Model::Gpt3_5Turbo, // Set the GPT-3.5 Turbo model
+            model: Model::Gpt3_5Turbo,  // Set the GPT-3.5 Turbo model
             messages: messages.clone(), // Pass in the messages vector
             ..Default::default()
         };
