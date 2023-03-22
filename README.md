@@ -15,7 +15,7 @@ A Rust library for interacting with OpenAI's ChatGPT API. This library simplifie
 ## Installation
 Add the following line to your 'Cargo.toml' file under the '[dependencies]' section:
 ```toml
-chat-gpt-lib-rs = "0.1.5"
+chat-gpt-lib-rs = "0.1.7"
 ```
 Then, run cargo build to download and compile the dependencies.
 
@@ -82,6 +82,9 @@ For an enhanced experience with icons, use a terminal that supports [Nerd Fonts]
 
 ## Documentation
 For more details about the request parameters and response structure, refer to the [OpenAI API documentation](https://beta.openai.com/docs/api-reference/chat/create).
+
+## Example project
+There is an interesting project [teachlead](https://crates.io/crates/techlead) now utilizing this project.
 
 ## License
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
