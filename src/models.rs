@@ -18,6 +18,8 @@ pub enum Model {
     Gpt3_5Turbo,
     #[serde(rename = "gpt-4")]
     Gpt_4,
+    #[serde(rename = "gpt-4-32k")]
+    Gpt_4_32k,
 }
 
 /// Implement Display to convert the enum back to a string representation.
@@ -26,6 +28,7 @@ impl Display for Model {
         let model_name = match self {
             Model::Gpt3_5Turbo => "gpt-3.5-turbo",
             Model::Gpt_4 => "gpt-4",
+            Model::Gpt_4_32k => "gpt-4-32k",
         };
         write!(f, "{model_name}")
     }
@@ -39,6 +42,7 @@ impl FromStr for Model {
         match s {
             "gpt-3.5-turbo" => Ok(Model::Gpt3_5Turbo),
             "gpt-4" => Ok(Model::Gpt_4),
+            "gpt-4-32k" => Ok(Model::Gpt_4_32k),
             _ => Err(()),
         }
     }
@@ -140,6 +144,38 @@ mod tests {
         let model_json = "\"gpt-3.5-turbo\"";
         let deserialized_model: Model = serde_json::from_str(model_json).unwrap();
         assert_eq!(deserialized_model, Model::Gpt3_5Turbo);
+    }
+
+    // Test the conversion of a valid model string to a Model enum variant for Gpt_4_32k
+    #[test]
+    fn test_from_str_gpt4_32k() {
+        let input = "gpt-4-32k";
+        let model: Result<Model, ()> = Model::from_str(input);
+        assert!(model.is_ok(), "Failed to parse the gpt-4-32k model name");
+        assert_eq!(model.unwrap(), Model::Gpt_4_32k);
+    }
+    // Test the conversion of a Model enum variant to its string representation for Gpt_4_32k:
+    #[test]
+    fn test_display_gpt4_32k() {
+        let model = Model::Gpt_4_32k;
+        let model_str = format!("{}", model);
+        assert_eq!(model_str, "gpt-4-32k");
+    }
+
+    // Test the serialization of a Model enum variant to JSON for Gpt_4_32k:
+    #[test]
+    fn test_serialize_gpt4_32k() {
+        let model = Model::Gpt_4_32k;
+        let serialized_model = serde_json::to_string(&model).unwrap();
+        assert_eq!(serialized_model, "\"gpt-4-32k\"");
+    }
+
+    // Test the deserialization of a JSON string to a Model enum variant for Gpt_4_32k
+    #[test]
+    fn test_deserialize_gpt4_32k() {
+        let model_json = "\"gpt-4-32k\"";
+        let deserialized_model: Model = serde_json::from_str(model_json).unwrap();
+        assert_eq!(deserialized_model, Model::Gpt_4_32k);
     }
 
     // Test the deserialization of a JSON string to a `Model` enum variant for Gpt3_5Turbo.
