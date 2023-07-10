@@ -11,6 +11,7 @@ A Rust library for interacting with OpenAI's ChatGPT API. This library simplifie
 * Strongly typed structures for request parameters and response data
 * Support for serialization and deserialization using Serde
 * An example CLI chat application that demonstrates library usage
+* An token estimation functionality
 
 ## Installation
 Add the following line to your 'Cargo.toml' file under the '[dependencies]' section:
