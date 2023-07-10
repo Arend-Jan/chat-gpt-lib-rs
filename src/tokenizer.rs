@@ -24,7 +24,10 @@ mod tests {
     #[test]
     fn test_count_tokens() {
         assert_eq!(count_tokens("Hello, world!"), 3);
-        assert_eq!(count_tokens("This is a longer sentence with more tokens."), 10);
+        assert_eq!(
+            count_tokens("This is a longer sentence with more tokens."),
+            10
+        );
         assert_eq!(count_tokens(""), 0);
     }
 }
