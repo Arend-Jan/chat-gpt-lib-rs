@@ -22,6 +22,16 @@ pub enum Model {
     Gpt_4_32k,
 }
 
+impl Model {
+    pub fn max_tokens(&self) -> usize {
+        match self {
+            Model::Gpt3_5Turbo => 4096,
+            Model::Gpt_4 => 8192,
+            Model::Gpt_4_32k => 32768,
+        }
+    }
+}
+
 /// Implement Display to convert the enum back to a string representation.
 impl Display for Model {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
@@ -209,5 +219,23 @@ mod tests {
             None,
             "Bias for token 999 should not be set"
         );
+    }
+
+    #[test]
+    fn test_max_tokens_gpt3_5turbo() {
+        let model = Model::Gpt3_5Turbo;
+        assert_eq!(model.max_tokens(), 4096);
+    }
+
+    #[test]
+    fn test_max_tokens_gpt_4() {
+        let model = Model::Gpt_4;
+        assert_eq!(model.max_tokens(), 8192);
+    }
+
+    #[test]
+    fn test_max_tokens_gpt_4_32k() {
+        let model = Model::Gpt_4_32k;
+        assert_eq!(model.max_tokens(), 32768);
     }
 }
