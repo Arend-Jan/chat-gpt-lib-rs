@@ -15,7 +15,7 @@ A Rust library for interacting with OpenAI's ChatGPT API. This library simplifie
 ## Installation
 Add the following line to your 'Cargo.toml' file under the '[dependencies]' section:
 ```toml
-chat-gpt-lib-rs = "0.1.8"
+chat-gpt-lib-rs = "<put here the latest and greatest version number>"
 ```
 Then, run cargo build to download and compile the dependencies.
 

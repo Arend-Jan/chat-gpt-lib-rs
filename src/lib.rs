@@ -11,7 +11,7 @@
 //! - [`Model`]: Represents the available OpenAI models.
 //! - [`Role`]: Represents the role of a message in the chat API call.
 //! - [`LogitBias`]: Represents the logit bias used in API calls.
-//!
+//! - [`count_tokens`]: Provides a rough estimation of the number of tokens in a given text.
 //! For examples and more detailed usage information, please refer to the documentation of each exported item.
 
 pub mod client;
