@@ -16,6 +16,8 @@
 
 pub mod client;
 pub mod models;
+pub mod tokenizer;
 
 pub use client::{ChatGPTClient, ChatInput, ChatResponse, Message};
 pub use models::{LogitBias, Model, Role};
+pub use tokenizer::count_tokens;
