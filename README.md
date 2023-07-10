@@ -11,6 +11,7 @@ A Rust library for interacting with OpenAI's ChatGPT API. This library simplifie
 * Strongly typed structures for request parameters and response data
 * Support for serialization and deserialization using Serde
 * An example CLI chat application that demonstrates library usage
+* An token estimation functionality
 
 ## Installation
 Add the following line to your 'Cargo.toml' file under the '[dependencies]' section:
@@ -82,6 +83,22 @@ For an enhanced experience with icons, use a terminal that supports [Nerd Fonts]
 
 ## Documentation
 For more details about the request parameters and response structure, refer to the [OpenAI API documentation](https://beta.openai.com/docs/api-reference/chat/create).
+
+
+## Contributing
+
+We welcome contributions to the `chat-gpt-lib-rs` project! Whether it's reporting bugs, proposing new features, improving documentation, or contributing code, your help is greatly appreciated. Here's how you can contribute:
+
+1. **Fork the Repository**: Start by forking the `chat-gpt-lib-rs` repository to your own GitHub account. This will create a copy of the repository that you can modify without affecting the original project.
+2. **Create a Branch**: In your forked repository, create a new branch for the changes you want to make. This helps keep your changes separate from other changes and makes it easier to merge your changes later.
+3. **Make Your Changes**: Make your changes in the new branch. This could be fixing a bug, adding a new feature, improving documentation, or any other changes you think would improve the project.
+4. **Test Your Changes**: Make sure your changes work as expected and don't introduce any new bugs. If the project has a test suite, make sure your changes pass all the tests.
+5. **Submit a Pull Request**: Once you're happy with your changes, submit a pull request to merge your branch into the main `chat-gpt-lib-rs` repository. In your pull request, describe the changes you made and why you think they should be included in the project.
+6. **Address Review Feedback**: After you submit a pull request, other contributors to the project may review your changes and provide feedback. Be prepared to make additional changes or answer questions about your changes.
+
+Remember, contributions to open source projects like `chat-gpt-lib-rs` are a collaborative effort. Be respectful and patient with other contributors, and remember that everyone is working together to improve the project.
+
+Thank you for your interest in contributing to `chat-gpt-lib-rs`!
 
 ## Example project
 There is an interesting project [teachlead](https://crates.io/crates/techlead) now utilizing this project.
