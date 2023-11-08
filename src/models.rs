@@ -20,6 +20,10 @@ pub enum Model {
     Gpt_4,
     #[serde(rename = "gpt-4-32k")]
     Gpt_4_32k,
+    #[serde(rename = "gpt-4-1106-preview")]
+    Gpt_4Turbo,
+    #[serde(rename = "gpt-4-vision-preview")]
+    Gpt_4Turbo_Vision,
 }
 
 impl Model {
@@ -28,6 +32,8 @@ impl Model {
             Model::Gpt3_5Turbo => 4096,
             Model::Gpt_4 => 8192,
             Model::Gpt_4_32k => 32768,
+            Model::Gpt_4Turbo => 128000,
+            Model::Gpt_4Turbo_Vision => 128000,
         }
     }
 }
@@ -39,6 +45,8 @@ impl Display for Model {
             Model::Gpt3_5Turbo => "gpt-3.5-turbo",
             Model::Gpt_4 => "gpt-4",
             Model::Gpt_4_32k => "gpt-4-32k",
+            Model::Gpt_4Turbo => "gpt-4-1106-preview",
+            Model::Gpt_4Turbo_Vision => "gpt-4-vision-preview",
         };
         write!(f, "{model_name}")
     }
@@ -53,6 +61,8 @@ impl FromStr for Model {
             "gpt-3.5-turbo" => Ok(Model::Gpt3_5Turbo),
             "gpt-4" => Ok(Model::Gpt_4),
             "gpt-4-32k" => Ok(Model::Gpt_4_32k),
+            "gpt-4-1106-preview" => Ok(Model::Gpt_4Turbo),
+            "gpt-4-vision-preview" => Ok(Model::Gpt_4Turbo_Vision),
             _ => Err(()),
         }
     }
@@ -237,5 +247,91 @@ mod tests {
     fn test_max_tokens_gpt_4_32k() {
         let model = Model::Gpt_4_32k;
         assert_eq!(model.max_tokens(), 32768);
+    }
+
+    // Test the conversion of a Model enum variant to its string representation for Gpt_4Turbo.
+    #[test]
+    fn test_display_gpt_4turbo() {
+        let model = Model::Gpt_4Turbo;
+        let model_str = format!("{}", model);
+        assert_eq!(model_str, "gpt-4-1106-preview");
+    }
+
+    // Test the conversion of a valid model string to a Model enum variant for Gpt_4Turbo.
+    #[test]
+    fn test_from_str_gpt_4turbo() {
+        let input = "gpt-4-1106-preview";
+        let model: Result<Model, ()> = Model::from_str(input);
+        assert!(
+            model.is_ok(),
+            "Failed to parse the gpt-4-1106-preview model name"
+        );
+        assert_eq!(model.unwrap(), Model::Gpt_4Turbo);
+    }
+
+    // Test the serialization of a Model enum variant to JSON for Gpt_4Turbo.
+    #[test]
+    fn test_serialize_gpt_4turbo() {
+        let model = Model::Gpt_4Turbo;
+        let serialized_model = serde_json::to_string(&model).unwrap();
+        assert_eq!(serialized_model, "\"gpt-4-1106-preview\"");
+    }
+
+    // Test the deserialization of a JSON string to a Model enum variant for Gpt_4Turbo.
+    #[test]
+    fn test_deserialize_gpt_4turbo() {
+        let model_json = "\"gpt-4-1106-preview\"";
+        let deserialized_model: Model = serde_json::from_str(model_json).unwrap();
+        assert_eq!(deserialized_model, Model::Gpt_4Turbo);
+    }
+
+    // Test the conversion of a Model enum variant to its string representation for Gpt_4Turbo_Vision.
+    #[test]
+    fn test_display_gpt_4turbo_vision() {
+        let model = Model::Gpt_4Turbo_Vision;
+        let model_str = format!("{}", model);
+        assert_eq!(model_str, "gpt-4-vision-preview");
+    }
+
+    // Test the conversion of a valid model string to a Model enum variant for Gpt_4Turbo_Vision.
+    #[test]
+    fn test_from_str_gpt_4turbo_vision() {
+        let input = "gpt-4-vision-preview";
+        let model: Result<Model, ()> = Model::from_str(input);
+        assert!(
+            model.is_ok(),
+            "Failed to parse the gpt-4-vision-preview model name"
+        );
+        assert_eq!(model.unwrap(), Model::Gpt_4Turbo_Vision);
+    }
+
+    // Test the serialization of a Model enum variant to JSON for Gpt_4Turbo_Vision.
+    #[test]
+    fn test_serialize_gpt_4turbo_vision() {
+        let model = Model::Gpt_4Turbo_Vision;
+        let serialized_model = serde_json::to_string(&model).unwrap();
+        assert_eq!(serialized_model, "\"gpt-4-vision-preview\"");
+    }
+
+    // Test the deserialization of a JSON string to a Model enum variant for Gpt_4Turbo_Vision.
+    #[test]
+    fn test_deserialize_gpt_4turbo_vision() {
+        let model_json = "\"gpt-4-vision-preview\"";
+        let deserialized_model: Model = serde_json::from_str(model_json).unwrap();
+        assert_eq!(deserialized_model, Model::Gpt_4Turbo_Vision);
+    }
+
+    // Test the max tokens for Gpt_4Turbo.
+    #[test]
+    fn test_max_tokens_gpt_4turbo() {
+        let model = Model::Gpt_4Turbo;
+        assert_eq!(model.max_tokens(), 128000);
+    }
+
+    // Test the max tokens for Gpt_4Turbo_Vision.
+    #[test]
+    fn test_max_tokens_gpt_4turbo_vision() {
+        let model = Model::Gpt_4Turbo_Vision;
+        assert_eq!(model.max_tokens(), 128000);
     }
 }
