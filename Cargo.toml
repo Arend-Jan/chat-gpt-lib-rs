@@ -16,7 +16,7 @@ name = "cli-chat-example"
 path = "examples/cli-chat-example.rs"
 
 [dependencies]
-env_logger = "0.10"
+env_logger = "0.11"
 log = "0.4"
 reqwest = { version = "0.11", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
