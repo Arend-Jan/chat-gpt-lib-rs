@@ -1,15 +1,32 @@
-// Import the necessary crates and modules
 use chat_gpt_lib_rs::{ChatGPTClient, ChatInput, Message, Model, Role};
 use dotenvy::dotenv;
+use std::env;
+use std::error::Error;
 use std::io::{stdin, stdout, Write};
 
+/// Main entry point for the Chat GPT client application.
+///
+/// This application interacts with the OpenAI GPT model to answer user questions in a chat interface.
+/// It demonstrates the basic setup for asynchronous communication with the OpenAI API, including loading
+/// API keys from environment variables, creating a chat client, and processing user input.
+///
+/// Environment Variables:
+/// - `OPENAI_API_KEY`: The API key for accessing OpenAI's services. Must be set in a `.env` file or the environment.
+///
+/// Dependencies:
+/// - `chat_gpt_lib_rs`: A library for interfacing with the Chat GPT model.
+/// - `dotenvy`: For loading environment variables from a `.env` file.
+///
+/// Error Handling:
+/// This application uses simple error handling with `expect` for demonstration. In a production environment,
+/// more robust error handling should be implemented.
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn Error>> {
     // Load the environment variables from the .env file
     dotenv().ok();
 
     // Retrieve the OpenAI API key from the environment variables
-    let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not found in environment");
+    let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not found in environment");
 
     // Create a new instance of the ChatGPTClient
     let client = ChatGPTClient::new(&api_key, "https://api.openai.com");
@@ -38,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Define the input for the ChatGPTClient
         let input = ChatInput {
-            model: Model::Gpt_4Turbo,   // Set the GPT-3.5 Turbo model
+            model: Model::Gpt_4Turbo,   // Consider making this configurable
             messages: messages.clone(), // Pass in the messages vector
             ..Default::default()
         };
