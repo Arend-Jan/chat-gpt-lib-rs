@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Define the input for the ChatGPTClient
         let input = ChatInput {
-            model: Model::Gpt_4Turbo,   // Set the GPT-3.5 Turbo model
+            model: Model::Gpt_4Turbo,   // Set the GPT-4 Turbo model
             messages: messages.clone(), // Pass in the messages vector
             ..Default::default()
         };
