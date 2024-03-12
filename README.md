@@ -34,7 +34,7 @@ let client = ChatGPTClient::new(api_key, base_url);
 To send a chat message, create a ChatInput structure and call the chat method:
 ```rust
 let chat_input = ChatInput {
-    model: Model::Gpt3_5Turbo,
+    model: Model::Gpt_4Turbo,
     messages: vec![
         Message {
             role: Role::System,
