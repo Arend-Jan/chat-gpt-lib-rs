@@ -1,6 +1,6 @@
 [package]
 name = "chat-gpt-lib-rs"
-version = "0.3.4"
+version = "0.4.0"
 edition = "2021"
 description = "A Rust library for interacting with OpenAI's ChatGPT API, providing a simple interface to make API requests and handle responses."
 license = "Apache-2.0"
@@ -21,7 +21,7 @@ log = "0.4"
 reqwest = { version = "0.12", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-tokio = { version = "1.36", features = ["full"] }
+tokio = { version = "1.37", features = ["full"] }
 
 [dev-dependencies]
 dotenvy = "0.15"
