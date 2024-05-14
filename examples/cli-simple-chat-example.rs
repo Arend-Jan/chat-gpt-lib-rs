@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         // Define the input for the ChatGPTClient
         let input = ChatInput {
-            model: Model::Gpt_4Turbo,   // Consider making this configurable
+            model: Model::Gpt_4o,       // Consider making this configurable
             messages: messages.clone(), // Pass in the messages vector
             ..Default::default()
         };

@@ -100,7 +100,7 @@ async fn process_user_input(
 
     // Prepare the ChatInput object for the API call
     let input = ChatInput {
-        model: Model::Gpt_4Turbo,
+        model: Model::Gpt_4o,
         messages: messages.clone(),
         ..Default::default()
     };
