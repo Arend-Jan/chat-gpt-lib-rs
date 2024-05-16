@@ -55,7 +55,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize the message history with a system message
     let mut messages = vec![Message {
         role: Role::System,
-        content: "Behave and talk like the computer from star trek.".to_string(),
+        content:
+            "Be a helpfull pair programmer, who want to show solutions and examples in code blocks"
+                .to_string(),
     }];
 
     // Check if any command line arguments are provided

@@ -122,10 +122,15 @@ impl ChatGPTClient {
     /// * `api_key` - The API key for the ChatGPT API.
     /// * `base_url` - The base URL for the ChatGPT API.
     pub fn new(api_key: &str, base_url: &str) -> Self {
+        let client = Client::builder()
+            .use_rustls_tls()
+            .build()
+            .expect("New client");
+
         Self {
             base_url: base_url.to_string(),
             api_key: api_key.to_string(),
-            client: Client::new(),
+            client,
         }
     }
 

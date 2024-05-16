@@ -67,3 +67,29 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+  alpine-test:
+    runs-on: ubuntu-latest
+    name: alpine / stable
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Set up Docker container
+        run: |
+          docker pull alpine:latest
+          docker run -d --name alpine-container -v ${{ github.workspace }}:/workspace -w /workspace alpine:latest tail -f /dev/null
+      - name: Install dependencies
+        run: |
+          docker exec alpine-container sh -c "
+          apk add --no-cache musl-dev gcc cargo rustup &&
+          rustup toolchain install stable &&
+          rustup default stable
+          "
+      - name: cargo generate-lockfile
+        if: hashFiles('Cargo.lock') == ''
+        run: docker exec alpine-container cargo generate-lockfile
+      - name: cargo test --locked
+        run: docker exec alpine-container cargo test --locked --all-features --all-targets
+      - name: Clean up Docker container
+        if: always()
+        run: docker rm -f alpine-container
