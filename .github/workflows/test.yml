@@ -84,15 +84,15 @@ jobs:
           apk update &&
           apk add --no-cache musl-dev gcc cargo rustup &&
           rustup-init -y &&
-          export PATH=$HOME/.cargo/bin:$PATH &&
-          rustup toolchain install stable &&
-          rustup default stable
+          source $HOME/.cargo/env &&
+          rustup toolchain install stable-x86_64-unknown-linux-musl &&
+          rustup default stable-x86_64-unknown-linux-musl
           "
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
-        run: docker exec alpine-container sh -c "export PATH=$HOME/.cargo/bin:$PATH && cargo generate-lockfile"
+        run: docker exec alpine-container sh -c "source $HOME/.cargo/env && cargo generate-lockfile"
       - name: cargo test --locked
-        run: docker exec alpine-container sh -c "export PATH=$HOME/.cargo/bin:$PATH && cargo test --locked --all-features --all-targets"
+        run: docker exec alpine-container sh -c "source $HOME/.cargo/env && cargo test --locked --all-features --all-targets"
       - name: Clean up Docker container
         if: always()
         run: docker rm -f alpine-container
