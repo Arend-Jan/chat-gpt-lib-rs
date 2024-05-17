@@ -82,7 +82,7 @@ jobs:
         run: |
           docker exec alpine-container sh -c "
           apk update &&
-          apk add --no-cache musl-dev gcc cargo rust rustup &&
+          apk add --no-cache musl-dev gcc cargo rustup &&
           rustup-init -y &&
           source $HOME/.cargo/env &&
           rustup toolchain install stable-x86_64-unknown-linux-musl &&
