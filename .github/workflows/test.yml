@@ -82,7 +82,7 @@ jobs:
         run: |
           docker exec alpine-container sh -c "
           apk update &&
-          apk add --no-cache musl-dev gcc &&
+          apk add --no-cache musl-dev gcc curl &&
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh &&
           rustup-init -y &&
           source $HOME/.cargo/env &&
