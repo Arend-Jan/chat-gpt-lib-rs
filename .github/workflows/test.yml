@@ -40,16 +40,14 @@ jobs:
       - name: Install nasm
         if: runner.os == 'Windows'
         run: choco install nasm -y
+       # Step to add NASM to PATH on Windows
       - name: Add NASM to PATH
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
-          echo "{path}" >> $GITHUB_PATH
-          Write-Host "PATH updated: $env:Path"
+          echo "C:\Program Files\NASM" >> $GITHUB_PATH
       - name: Echo path 
         if: runner.os == 'Windows'
         shell: powershell
