@@ -91,9 +91,9 @@ jobs:
 
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
-        run: docker exec alpine-container sh -c "source $HOME/.cargo/env && cargo generate-lockfile"
+        run: docker exec alpine-container sh -c "source /root/.cargo/env && cargo generate-lockfile"
       - name: cargo test --locked
-        run: docker exec alpine-container sh -c "source $HOME/.cargo/env && cargo test --locked --all-features --all-targets"
+        run: docker exec alpine-container sh -c "source /root/.cargo/env && cargo test --locked --all-features --all-targets"
       - name: Clean up Docker container
         if: always()
         run: docker rm -f alpine-container
