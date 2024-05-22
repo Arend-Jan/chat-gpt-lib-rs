@@ -46,7 +46,7 @@ jobs:
         run: choco install nasm -y
       - name: Verify nasm installation
         if: runner.os == 'Windows'
-        run: 'C:\Program Files\NASM\nasm.exe -v'
+        run: '"C:\Program Files\NASM\nasm.exe" -v'
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo generate-lockfile
