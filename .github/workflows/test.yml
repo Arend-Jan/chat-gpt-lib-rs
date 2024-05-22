@@ -44,7 +44,19 @@ jobs:
       - name: Add NASM to PATH
         if: runner.os == 'Windows'
         shell: powershell
-        run: echo "C:\Program Files\NASM" >> $GITHUB_PATH
+        run: |
+          $env:Path += ";C:\Program Files\NASM"
+          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
+      - name: Add NASM to PATH
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $env:Path += ";C:\Program Files\NASM"
+          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
+          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
+          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
+          echo "{path}" >> $GITHUB_PATH
+          Write-Host "PATH updated: $env:Path"
       - name: Echo path 
         if: runner.os == 'Windows'
         shell: powershell
@@ -54,6 +66,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $env:Path += ";C:\Program Files\NASM"
+          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           Write-Host "Checking NASM version..."
           & 'C:\Program Files\NASM\nasm.exe' -v
       - name: Verify NASM Installation
