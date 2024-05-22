@@ -48,6 +48,7 @@ jobs:
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
+          echo "$env:Path" >> $GITHUB_PATH
           Write-Host "PATH updated: $env:Path"
       - name: Echo path 
         if: runner.os == 'Windows'
