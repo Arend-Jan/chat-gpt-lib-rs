@@ -37,9 +37,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Install nasm on Windows
+      - name: Install Chocolatey
+        if: runner.os == 'Windows'
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+      - name: Install nasm
         if: runner.os == 'Windows'
         run: choco install nasm -y
+      - name: Verify nasm installation
+        if: runner.os == 'Windows'
+        run: nasm -v
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo generate-lockfile
