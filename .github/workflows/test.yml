@@ -64,8 +64,7 @@ jobs:
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           cargo test --locked --all-features --all-targets
       - name: cargo generate-lockfile (mac)
-        if: hashFiles('Cargo.lock') == ''
-        if: runner.os == 'macOS'
+        if: hashFiles('Cargo.lock') == '' && runner.os == 'macOS'
         run: |
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
