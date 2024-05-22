@@ -40,34 +40,6 @@ jobs:
       - name: Install nasm
         if: runner.os == 'Windows'
         run: choco install nasm -y
-       # Step to add NASM to PATH on Windows
-      - name: Add NASM to PATH
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $env:Path += ";C:\Program Files\NASM"
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
-      - name: Add NASM to PATH
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $env:Path += ";C:\Program Files\NASM"
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
-          echo "{path}" >> $GITHUB_PATH
-          Write-Host "PATH updated: $env:Path"
-      - name: Echo path 
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          Write-Host "PATH in next run: $env:Path"
-      - name: Verify NASM Installation full path
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          Write-Host "Checking NASM version..."
-          & 'C:\Program Files\NASM\nasm.exe' -v
       - name: Verify NASM Installation
         if: runner.os == 'Windows'
         shell: powershell
@@ -78,13 +50,15 @@ jobs:
           nasm -v
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
-      - name: cargo generate-lockfile
+      - name: cargo generate-lockfile (windows)
         if: hashFiles('Cargo.lock') == ''
+        if: runner.os == 'Windows'
         run: |
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           cargo generate-lockfile
-      - name: cargo test
+      - name: cargo test (windows)
+        if: runner.os == 'Windows'
         run: |
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
