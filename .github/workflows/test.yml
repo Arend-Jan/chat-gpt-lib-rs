@@ -49,13 +49,11 @@ jobs:
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::User)
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
           Write-Host "PATH updated: $env:Path"
-          echo $PATH
       - name: Verify NASM Installation full path
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           Write-Host "Checking NASM version..."
-          Start-Sleep -Seconds 5
           & 'C:\Program Files\NASM\nasm.exe' -v
       - name: Verify NASM Installation
         if: runner.os == 'Windows'
