@@ -84,10 +84,11 @@ jobs:
           apk update &&
           apk add --no-cache musl-dev gcc rust cargo rustup &&
           rustup-init -y &&
-          source $HOME/.cargo/env &&
+          source /root/.cargo/env &&
           rustup toolchain install stable-x86_64-unknown-linux-musl &&
           rustup default stable-x86_64-unknown-linux-musl
           "
+
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: docker exec alpine-container sh -c "source $HOME/.cargo/env && cargo generate-lockfile"
