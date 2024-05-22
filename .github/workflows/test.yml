@@ -63,6 +63,20 @@ jobs:
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           cargo test --locked --all-features --all-targets
+      - name: cargo generate-lockfile (mac)
+        if: hashFiles('Cargo.lock') == ''
+        if: runner.os == 'macOS'
+        run: |
+          $env:Path += ";C:\Program Files\NASM"
+          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
+          cargo generate-lockfile
+      - name: cargo test (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          $env:Path += ";C:\Program Files\NASM"
+          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
+          cargo test --locked --all-features --all-targets
+ 
   coverage:
     runs-on: ubuntu-latest
     name: ubuntu / stable / coverage
