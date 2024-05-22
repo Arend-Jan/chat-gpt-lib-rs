@@ -37,6 +37,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+      - name: Install nasm
+        if: runner.os == 'Windows'
+        run: choco install nasm -y
+      - name: Add tool to PATH
+        run: echo 'C:\Program Files\NASM' >> $GITHUB_PATH
+      - name: Verify nasm installation
+        if: runner.os == 'Windows'
+        run: nasm -v
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo generate-lockfile
