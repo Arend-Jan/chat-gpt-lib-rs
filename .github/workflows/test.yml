@@ -42,6 +42,21 @@ jobs:
         run: choco install nasm -y
       - name: Add tool to PATH
         run: echo 'C:\Program Files\NASM' >> $GITHUB_PATH
+      
+      - name: Verify NASM Installation full path
+        shell: powershell
+        run: |
+          Write-Host "Checking NASM version..."
+          Start-Sleep -Seconds 5
+          & 'C:\Program Files\NASM\nasm.exe' -v
+
+      - name: Verify NASM Installation
+        shell: powershell
+        run: |
+          Write-Host "Checking NASM version..."
+          Start-Sleep -Seconds 5  # Adding a short delay
+          nasm -v
+
       - name: Verify nasm installation
         if: runner.os == 'Windows'
         run: nasm -v
