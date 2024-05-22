@@ -33,9 +33,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
-      env:
-        PATH: ${{ runner.tool_cache }};C:\Program Files\NASM;${{ env.PATH }}
-        AWS_LC_SYS_NO_ASM: "1"  # Add this environment variable
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,14 +41,6 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-      - name: Install nasm
-        if: runner.os == 'Windows'
-        run: choco install nasm -y
-      - name: Verify nasm installation
-        if: runner.os == 'Windows'
-        run: |
-          $env:PATH += ";C:\Program Files\NASM"
-          nasm -v
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo generate-lockfile
