@@ -44,6 +44,10 @@ jobs:
       - name: Install nasm
         if: runner.os == 'Windows'
         run: choco install nasm -y
+      - name: Add nasm to PATH
+        if: runner.os == 'Windows'
+        run: |
+          echo "::add-path::C:\Program Files\NASM"
       - name: Verify nasm installation
         if: runner.os == 'Windows'
         run: nasm -v
