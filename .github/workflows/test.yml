@@ -47,7 +47,6 @@ jobs:
         run: |
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
-
       - name: Add NASM to PATH
         if: runner.os == 'Windows'
         shell: powershell
@@ -75,12 +74,8 @@ jobs:
         run: |
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
-
           Write-Host "Checking NASM version..."
           nasm -v
-      - name: Verify nasm installation
-        if: runner.os == 'Windows'
-        run: nasm -v
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo generate-lockfile
