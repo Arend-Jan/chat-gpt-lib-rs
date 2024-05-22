@@ -13,6 +13,8 @@ A Rust library for interacting with OpenAI's ChatGPT API. This library simplifie
 * An example CLI chat application that demonstrates library usage
 * An token estimation functionality
 
+Utilizes Rustls for the TLS layer, eliminating the need for OpenSSL and enabling seamless native execution on Linux with musl.
+
 ## Installation
 Add the following line to your 'Cargo.toml' file under the '[dependencies]' section:
 ```toml
