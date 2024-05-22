@@ -50,30 +50,21 @@ jobs:
           nasm -v
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
-      - name: cargo generate-lockfile (windows)
+      - name: cargo generate-lockfile 
         if: hashFiles('Cargo.lock') == ''
-        if: runner.os == 'Windows'
         run: |
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           cargo generate-lockfile
-      - name: cargo test (windows)
+      - name: cargo test - Windows
         if: runner.os == 'Windows'
         run: |
           $env:Path += ";C:\Program Files\NASM"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           cargo test --locked --all-features --all-targets
-      - name: cargo generate-lockfile (mac)
-        if: hashFiles('Cargo.lock') == '' && runner.os == 'macOS'
-        run: |
-          $env:Path += ";C:\Program Files\NASM"
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
-          cargo generate-lockfile
-      - name: cargo test (Mac)
+      - name: cargo test - Mac
         if: runner.os == 'macOS'
         run: |
-          $env:Path += ";C:\Program Files\NASM"
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           cargo test --locked --all-features --all-targets
  
   coverage:
