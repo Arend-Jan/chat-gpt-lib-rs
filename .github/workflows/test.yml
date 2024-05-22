@@ -44,9 +44,13 @@ jobs:
       - name: Install nasm
         if: runner.os == 'Windows'
         run: choco install nasm -y
+      - name: Add nasm to PATH
+        if: runner.os == 'Windows'
+        run: |
+          $env:PATH += ";C:\Program Files\NASM"
       - name: Verify nasm installation
         if: runner.os == 'Windows'
-        run: cmd /c ""C:\Program Files\NASM\nasm.exe" -v"
+        run: nasm -v
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo generate-lockfile
