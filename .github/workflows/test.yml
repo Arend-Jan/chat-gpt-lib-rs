@@ -53,8 +53,6 @@ jobs:
       - name: cargo generate-lockfile 
         if: hashFiles('Cargo.lock') == ''
         run: |
-          $env:Path += ";C:\Program Files\NASM"
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
           cargo generate-lockfile
       - name: cargo test - Windows
         if: runner.os == 'Windows'
