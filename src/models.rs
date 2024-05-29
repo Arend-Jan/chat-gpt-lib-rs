@@ -8,8 +8,7 @@ use std::str::FromStr;
 ///
 /// This enum provides an easy way to specify the model to be used in the API calls.
 /// Currently supported models are:
-/// - Gpt3_5Turbo
-/// - Gpt4
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[allow(non_camel_case_types)] // Add this line to suppress the warning
