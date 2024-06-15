@@ -1,4 +1,5 @@
-use chat_gpt_lib_rs::client::{ChatGPTError, Message};
+use chat_gpt_lib_rs::client::chat_input::Message;
+use chat_gpt_lib_rs::client::error::ChatGPTError;
 use chat_gpt_lib_rs::{ChatGPTClient, ChatInput, Model, Role};
 use console::{style, StyledObject};
 use dotenvy::dotenv;
