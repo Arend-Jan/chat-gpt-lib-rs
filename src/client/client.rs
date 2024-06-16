@@ -106,8 +106,6 @@ mod tests {
     use crate::Model;
     use crate::Role;
     use reqwest::StatusCode;
-    use serde_json::json;
-    use std::env;
     use wiremock::matchers::{header, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
