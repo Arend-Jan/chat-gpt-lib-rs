@@ -50,15 +50,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .to_lowercase()
         .eq("true");
 
+    // Add VERBOSE_RETURN=true to your .env file, if you want te see the meta data
+    // of the chat as well
+    let verbose_response = env::var("VERBOSE_RESPONSE")
+        .unwrap_or_else(|_| "false".to_string())
+        .to_lowercase()
+        .eq("true");
+
     // Initialize the ChatGPT client
     let client = ChatGPTClient::new(&api_key, "https://api.openai.com");
 
     // Initialize the message history with a system message
     let mut messages = vec![Message {
         role: Role::System,
-        content:
-            "Be a helpfull pair programmer, who want to show solutions and examples in code blocks"
-                .to_string(),
+        content: "You are a helpful assistant who provides solutions and examples in code blocks."
+            .to_string(),
     }];
 
     // Check if any command line arguments are provided
@@ -67,14 +73,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let user_message_content = args.fold(first_arg, |acc, arg| acc + " " + &arg);
 
         // Process the user input from command line arguments
-        process_user_input(&client, &mut messages, user_message_content).await?;
+        process_user_input(
+            &client,
+            &mut messages,
+            user_message_content,
+            verbose_response,
+            use_icons,
+        )
+        .await?;
     }
 
     // Enter the main loop, where user input is accepted and responses are generated
     loop {
         // Display the input prompt with an optional icon
         let input_prompt: StyledObject<&str> = if use_icons {
-            style("\u{f0ede} Input: ").green()
+            style("\u{f0ede}  Input: ").green()
         } else {
             style("Input: ").green()
         };
@@ -86,14 +99,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         stdin().read_line(&mut user_message_content).unwrap();
 
         // Process the user input and generate a response
-        process_user_input(&client, &mut messages, user_message_content).await?;
+        process_user_input(
+            &client,
+            &mut messages,
+            user_message_content,
+            verbose_response,
+            use_icons,
+        )
+        .await?;
     }
 }
 
+///
+/// # Arguments
+///
+/// * `client` - A reference to the ChatGPT client.
+/// * `messages` - A mutable reference to the message history.
+/// * `user_message_content` - The user's message content.
+/// * `verbose_response` - A boolean indicating whether to display metadata.
+/// * `use_icons` - A boolean indicating whether to use icons in the display.
 async fn process_user_input(
     client: &ChatGPTClient,
     messages: &mut Vec<Message>,
     user_message_content: String,
+    verbose_response: bool,
+    use_icons: bool,
 ) -> Result<(), ChatGPTError> {
     // Add the user message to the message history
     messages.push(Message {
@@ -128,18 +158,33 @@ async fn process_user_input(
     // Extract the assistant's message from the API response
     let assistant_message = &chat.choices[0].message.content;
 
-    // Display the computer's response with an optional icon
-    let computer_label: StyledObject<&str> = if env::var("USE_ICONS")
-        .unwrap_or_else(|_| "false".to_string())
-        .to_lowercase()
-        .eq("true")
-    {
-        style("\u{f12ca} Computer: ").color256(39)
+    // Determine labels based on the use_icons flag
+    let computer_label = if use_icons {
+        style("\u{f12ca}  Computer: ").blue()
     } else {
-        style("Computer: ").color256(39)
+        style("Computer: ").blue()
     };
-    let computer_response: StyledObject<String> = style(assistant_message.clone());
 
+    let metadata_label = if use_icons {
+        "\u{f121}  Metadata:"
+    } else {
+        "Metadata:"
+    };
+
+    // If verbose response is enabled, display additional metadata
+    if verbose_response {
+        println!(
+            "{}",
+            style(format!(
+                "{}\n   ID: {}\n   Created: {}\n   Model: {}\n   Usage: {:?}",
+                metadata_label, chat.id, chat.created, chat.model, chat.usage
+            ))
+            .yellow()
+        );
+    }
+
+    // Display the computer's response
+    let computer_response = style(assistant_message.clone());
     println!("{}{}", computer_label, computer_response);
 
     // Add the assistant's message to the message history

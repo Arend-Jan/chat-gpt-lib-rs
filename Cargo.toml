@@ -29,4 +29,3 @@ thiserror = "1.0"
 dotenvy = "0.15"
 console = "0.15"
 indicatif = "0.17"
-

@@ -97,7 +97,7 @@ impl Default for ChatInput {
 /// Fields:
 /// - `role`: The role of the message sender (e.g., system, user, assistant).
 /// - `content`: The content of the message.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Message {
     pub role: Role,
     pub content: String,
