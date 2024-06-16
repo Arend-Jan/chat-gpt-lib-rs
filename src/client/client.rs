@@ -97,3 +97,106 @@ impl ChatGPTClient {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::client::chat_response;
+    use crate::Message;
+    use crate::Model;
+    use crate::Role;
+    use reqwest::StatusCode;
+    use serde_json::json;
+    use std::env;
+    use wiremock::matchers::{header, method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_new_chat_gpt_client() {
+        let api_key = "test_api_key";
+        let base_url = "https://api.openai.com";
+
+        let client = ChatGPTClient::new(api_key, base_url);
+
+        assert_eq!(client.base_url, base_url);
+        assert_eq!(client.api_key, api_key);
+    }
+
+    #[tokio::test]
+    async fn test_chat_success() {
+        let mock_server = MockServer::start().await;
+
+        let client = ChatGPTClient::new("test_api_key", &mock_server.uri());
+
+        let chat_input = ChatInput {
+            model: Model::Gpt_4,
+            messages: vec![
+                Message {
+                    role: Role::System,
+                    content: "You are a helpful assistant.".to_string(),
+                },
+                Message {
+                    role: Role::User,
+                    content: "Who is the best field hockey player in the world".to_string(),
+                },
+            ],
+            ..Default::default()
+        };
+
+        let chat_response = ChatResponse {
+            id: "test_id".to_string(),
+            object: "chat.completion".to_string(),
+            created: 123456789,
+            model: Model::Gpt_4.to_string(),
+            choices: vec![],
+            usage: chat_response::Usage {
+                completion_tokens: 42,
+                prompt_tokens: 42,
+                total_tokens: 84,
+            },
+        };
+
+        Mock::given(path("/v1/chat/completions"))
+            .and(method("POST"))
+            .and(header("Authorization", "Bearer test_api_key"))
+            .respond_with(ResponseTemplate::new(StatusCode::OK).set_body_json(&chat_response))
+            .mount(&mock_server)
+            .await;
+
+        let response = client.chat(chat_input).await.unwrap();
+        assert_eq!(response.id, chat_response.id);
+        assert_eq!(response.object, chat_response.object);
+    }
+
+    #[tokio::test]
+    async fn test_chat_failure() {
+        let mock_server = MockServer::start().await;
+
+        let client = ChatGPTClient::new("test_api_key", &mock_server.uri());
+
+        let chat_input = ChatInput {
+            model: Model::Gpt_4,
+            messages: vec![
+                Message {
+                    role: Role::System,
+                    content: "You are a helpful assistant.".to_string(),
+                },
+                Message {
+                    role: Role::User,
+                    content: "Who is the best field hockey player in the world".to_string(),
+                },
+            ],
+            ..Default::default()
+        };
+
+        Mock::given(path("/v1/chat/completions"))
+            .and(method("POST"))
+            .and(header("Authorization", "Bearer test_api_key"))
+            .respond_with(ResponseTemplate::new(StatusCode::BAD_REQUEST))
+            .mount(&mock_server)
+            .await;
+
+        let result = client.chat(chat_input).await;
+        assert!(result.is_err());
+    }
+}
