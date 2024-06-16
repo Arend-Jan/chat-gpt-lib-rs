@@ -261,4 +261,107 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn test_message_content_from_string() {
+        let text = "Hello, world!".to_string();
+        let content: MessageContent = text.into();
+        assert_eq!(
+            content,
+            MessageContent::Text {
+                text: "Hello, world!".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_message_content_from_str() {
+        let text = "Hello, world!";
+        let content: MessageContent = text.into();
+        assert_eq!(
+            content,
+            MessageContent::Text {
+                text: "Hello, world!".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_message_from_tuple_role_string() {
+        let role = Role::User;
+        let text = "Hello, world!".to_string();
+        let message: Message = (role, text).into();
+        assert_eq!(message.role, Role::User);
+        assert_eq!(
+            message.content,
+            MessageContent::Text {
+                text: "Hello, world!".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_message_from_tuple_role_str() {
+        let role = Role::User;
+        let text = "Hello, world!";
+        let message: Message = (role, text).into();
+        assert_eq!(message.role, Role::User);
+        assert_eq!(
+            message.content,
+            MessageContent::Text {
+                text: "Hello, world!".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_message_from_string() {
+        let text = "Hello, world!".to_string();
+        let message: Message = text.into();
+        assert_eq!(message.role, Role::User);
+        assert_eq!(
+            message.content,
+            MessageContent::Text {
+                text: "Hello, world!".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_message_from_str() {
+        let text = "Hello, world!";
+        let message: Message = text.into();
+        assert_eq!(message.role, Role::User);
+        assert_eq!(
+            message.content,
+            MessageContent::Text {
+                text: "Hello, world!".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_message_content_display() {
+        let text_content = MessageContent::Text {
+            text: "Hello, world!".to_string(),
+        };
+        assert_eq!(format!("{}", text_content), "Text: Hello, world!");
+
+        let image_url_content = MessageContent::ImageUrl {
+            image_url: ImageUrl {
+                url: "http://example.com/image.png".to_string(),
+            },
+        };
+        assert_eq!(
+            format!("{}", image_url_content),
+            "Image URL: http://example.com/image.png"
+        );
+    }
+
+    #[test]
+    fn test_role_display() {
+        assert_eq!(format!("{}", Role::System), "System");
+        assert_eq!(format!("{}", Role::User), "User");
+        assert_eq!(format!("{}", Role::Assistant), "Assistant");
+    }
 }
