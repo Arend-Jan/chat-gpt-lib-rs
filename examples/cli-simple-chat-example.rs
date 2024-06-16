@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Create a vector of messages with an initial system message
     let mut messages = vec![Message {
         role: Role::System,
-        content: "You are an AI that can answer any question.".to_string(),
+        content: "You are an AI that can answer any question.".into(),
     }];
 
     // Start an input loop
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Add the user's message to the messages vector
         messages.push(Message {
             role: Role::User,
-            content: user_input.trim().to_string(),
+            content: user_input.trim().into(),
         });
 
         // Define the input for the ChatGPTClient

@@ -59,12 +59,12 @@ mod tests {
 
         let message = Message {
             role: Role::Assistant,
-            content: "This is a test message.".to_string(),
+            content: "This is a test message.".into(),
         };
 
         let choice = Choice {
             message: message.clone(),
-            finish_reason: "stop".to_string(),
+            finish_reason: "stop".into(),
         };
 
         let chat_response = ChatResponse {
@@ -102,7 +102,7 @@ mod tests {
     fn test_choice_struct() {
         let message = Message {
             role: Role::Assistant,
-            content: "Sample response".to_string(),
+            content: "Sample response".into(),
         };
 
         let choice = Choice {

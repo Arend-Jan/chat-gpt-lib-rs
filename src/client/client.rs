@@ -48,11 +48,11 @@ impl ChatGPTClient {
     ///         messages: vec![
     ///             Message {
     ///                 role: Role::System,
-    ///                 content: "You are a helpful assistant.".to_string(),
+    ///                 content: "You are a helpful assistant.".into(),
     ///             },
     ///             Message {
     ///                 role: Role::User,
-    ///                 content: "Who is the best field hockey player in the world".to_string(),
+    ///                 content: "Who is the best field hockey player in the world".into(),
     ///             },
     ///         ],
     ///         ..Default::default()
@@ -131,11 +131,11 @@ mod tests {
             messages: vec![
                 Message {
                     role: Role::System,
-                    content: "You are a helpful assistant.".to_string(),
+                    content: "You are a helpful assistant.".into(),
                 },
                 Message {
                     role: Role::User,
-                    content: "Who is the best field hockey player in the world".to_string(),
+                    content: "Who is the best field hockey player in the world".into(),
                 },
             ],
             ..Default::default()
@@ -177,11 +177,11 @@ mod tests {
             messages: vec![
                 Message {
                     role: Role::System,
-                    content: "You are a helpful assistant.".to_string(),
+                    content: "You are a helpful assistant.".into(),
                 },
                 Message {
                     role: Role::User,
-                    content: "Who is the best field hockey player in the world".to_string(),
+                    content: "Who is the best field hockey player in the world".into(),
                 },
             ],
             ..Default::default()

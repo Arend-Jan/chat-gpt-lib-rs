@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut messages = vec![Message {
         role: Role::System,
         content: "You are a helpful assistant who provides solutions and examples in code blocks."
-            .to_string(),
+            .into(),
     }];
 
     // Check if any command line arguments are provided
@@ -128,7 +128,7 @@ async fn process_user_input(
     // Add the user message to the message history
     messages.push(Message {
         role: Role::User,
-        content: user_message_content.trim().to_string(),
+        content: user_message_content.trim().into(),
     });
 
     // Prepare the ChatInput object for the API call

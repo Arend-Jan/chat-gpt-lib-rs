@@ -1,6 +1,7 @@
 use crate::client::tool::{Tool, ToolChoice};
 use crate::models::{LogitBias, Model, Role};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 /// Represents the input for the chat API call.
 ///
@@ -100,7 +101,119 @@ impl Default for ChatInput {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Message {
     pub role: Role,
-    pub content: String,
+    #[serde(flatten)]
+    pub content: MessageContent,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(tag = "type")]
+pub enum MessageContent {
+    #[serde(rename = "text")]
+    Text { text: String },
+    #[serde(rename = "image_url")]
+    ImageUrl { image_url: ImageUrl },
+}
+
+impl From<String> for MessageContent {
+    /// Converts a `String` to `MessageContent::Text`.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text content to convert.
+    ///
+    fn from(text: String) -> Self {
+        MessageContent::Text { text }
+    }
+}
+
+impl From<&str> for MessageContent {
+    /// Converts a `&str` to `MessageContent::Text`.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text content to convert.
+    ///
+    fn from(text: &str) -> Self {
+        MessageContent::Text {
+            text: text.to_string(),
+        }
+    }
+}
+
+impl From<(Role, String)> for Message {
+    /// Converts a tuple of `(Role, String)` to a `Message`.
+    ///
+    /// # Arguments
+    ///
+    /// * `(role, text)` - A tuple where `role` is the role of the message sender and `text` is the text content.
+    ///
+    fn from((role, text): (Role, String)) -> Self {
+        Self {
+            role,
+            content: MessageContent::Text { text },
+        }
+    }
+}
+
+impl From<(Role, &str)> for Message {
+    /// Converts a tuple of `(Role, &str)` to a `Message`.
+    ///
+    /// # Arguments
+    ///
+    /// * `(role, text)` - A tuple where `role` is the role of the message sender and `text` is the text content.
+    ///
+    fn from((role, text): (Role, &str)) -> Self {
+        Self {
+            role,
+            content: MessageContent::Text {
+                text: text.to_string(),
+            },
+        }
+    }
+}
+
+impl From<String> for Message {
+    /// Converts a `String` to a `Message` with `Role::User`.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text content to convert.
+    ///
+    fn from(text: String) -> Self {
+        Self {
+            role: Role::User,
+            content: MessageContent::from(text),
+        }
+    }
+}
+
+impl From<&str> for Message {
+    /// Converts a `&str` to a `Message` with `Role::User`.
+    ///
+    /// # Arguments
+    ///
+    /// * `text` - The text content to convert.
+    ///
+    fn from(text: &str) -> Self {
+        Self {
+            role: Role::User,
+            content: MessageContent::from(text),
+        }
+    }
+}
+
+impl fmt::Display for MessageContent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MessageContent::Text { text } => write!(f, "Text: {}", text),
+            MessageContent::ImageUrl { image_url } => write!(f, "Image URL: {}", image_url.url),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub struct ImageUrl {
+    pub url: String,
 }
 
 #[cfg(test)]
@@ -136,9 +249,16 @@ mod tests {
     fn test_message_struct() {
         let message = Message {
             role: Role::User,
-            content: "Hello, how can I help you?".to_string(),
+            content: MessageContent::Text {
+                text: "Hello, how can I help you?".into(),
+            },
         };
         assert_eq!(message.role, Role::User);
-        assert_eq!(message.content, "Hello, how can I help you?");
+        assert_eq!(
+            message.content,
+            MessageContent::Text {
+                text: "Hello, how can I help you?".to_string(),
+            }
+        );
     }
 }
