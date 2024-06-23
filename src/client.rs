@@ -1,6 +1,6 @@
 use crate::models::{LogitBias, Model, Role};
 use log::debug;
-use reqwest::{Client, StatusCode};
+use reqwest::{header::HeaderMap, Client, StatusCode};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -93,8 +93,12 @@ pub struct Message {
 /// Enum representing possible errors in the ChatGPTClient.
 #[derive(Error, Debug)]
 pub enum ChatGPTError {
-    #[error("Request failed: {0}")]
-    RequestFailed(String),
+    #[error("Request failed with status code: {status_code}\nHeaders: {headers:?}\nBody: {body}")]
+    RequestFailed {
+        status_code: StatusCode,
+        headers: HeaderMap,
+        body: String,
+    },
     #[error("Reqwest error: {0}")]
     Reqwest(#[from] reqwest::Error),
 }
@@ -178,11 +182,11 @@ impl ChatGPTClient {
             let status_code = response.status();
             let headers = response.headers().clone();
             let body = response.text().await?;
-
-            let error_message = format!(
-                "Request failed with status code: {status_code}\nHeaders: {headers:?}\nBody: {body}"
-            );
-            Err(ChatGPTError::RequestFailed(error_message))
+            Err(ChatGPTError::RequestFailed {
+                status_code,
+                headers,
+                body,
+            })
         }
     }
 }
