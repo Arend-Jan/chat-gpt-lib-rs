@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fmt::Result as FmtResult;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
+use thiserror::Error;
 
 /// `Model` enum represents the available OpenAI models.
 ///
@@ -58,7 +59,7 @@ impl Display for Model {
 
 /// Implement `FromStr` to enable parsing the enum from a string representation.
 impl FromStr for Model {
-    type Err = ();
+    type Err = ModelError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -68,9 +69,17 @@ impl FromStr for Model {
             "gpt-4o" => Ok(Model::Gpt_4o),
             "gpt-4-1106-preview" => Ok(Model::Gpt_4Turbo),
             "gpt-4-vision-preview" => Ok(Model::Gpt_4Turbo_Vision),
-            _ => Err(()),
+            _ => Err(ModelError::UnsupportedModel(s.into())),
         }
     }
+}
+
+/// A model parsing issues.
+#[derive(Error, Debug)]
+pub enum ModelError {
+    /// Unknown or not supported model.
+    #[error("Unsupported model: {0}")]
+    UnsupportedModel(String),
 }
 
 /// `LogitBias` struct represents the logit bias used in API calls.
