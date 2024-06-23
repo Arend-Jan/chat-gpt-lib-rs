@@ -2,7 +2,7 @@ use crate::models::{LogitBias, Model, Role};
 use log::debug;
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use thiserror::Error;
 
 /// Main ChatGPTClient struct.
 pub struct ChatGPTClient {
@@ -91,27 +91,12 @@ pub struct Message {
 }
 
 /// Enum representing possible errors in the ChatGPTClient.
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum ChatGPTError {
+    #[error("Request failed: {0}")]
     RequestFailed(String),
-    Reqwest(reqwest::Error),
-}
-
-impl fmt::Display for ChatGPTError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ChatGPTError::RequestFailed(message) => write!(f, "{message}"),
-            ChatGPTError::Reqwest(error) => write!(f, "Reqwest error: {error}"),
-        }
-    }
-}
-
-impl std::error::Error for ChatGPTError {}
-
-impl From<reqwest::Error> for ChatGPTError {
-    fn from(error: reqwest::Error) -> Self {
-        ChatGPTError::Reqwest(error)
-    }
+    #[error("Reqwest error: {0}")]
+    Reqwest(#[from] reqwest::Error),
 }
 
 impl ChatGPTClient {
