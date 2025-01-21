@@ -139,7 +139,7 @@ where
 
 /// Attempts to parse the OpenAI error body. If successful, returns `Err(OpenAIError::APIError)`.
 /// Otherwise, returns a generic error based on the HTTP status code or raw text.
-async fn parse_error_response<R>(response: reqwest::Response) -> Result<R, OpenAIError> {
+pub async fn parse_error_response<R>(response: reqwest::Response) -> Result<R, OpenAIError> {
     let status = response.status();
     let text_body = response.text().await.unwrap_or_else(|_| "".to_string());
 

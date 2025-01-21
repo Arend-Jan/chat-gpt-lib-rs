@@ -6,8 +6,8 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use openai_rust::api_resources::models;
-//! use openai_rust::{OpenAIClient, OpenAIError};
+//! use chat_gpt_lib_rs::api_resources::models;
+//! use chat_gpt_lib_rs::{OpenAIClient, OpenAIError};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), OpenAIError> {
