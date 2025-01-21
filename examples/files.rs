@@ -55,14 +55,20 @@ async fn main() -> Result<(), OpenAIError> {
     println!("\nDownloading the file content...");
     let content_bytes = retrieve_file_content(&client, &uploaded_file.id).await?;
     println!("File size (bytes): {}", content_bytes.len());
+    println!(
+        "File content (parsed in UTF-8): \n{}",
+        String::from_utf8(content_bytes).unwrap_or("Non UTF-8 bytes".to_string())
+    );
 
     // Delete the file if you no longer need it
-    println!("\nDeleting the file...");
-    let delete_response = delete_file(&client, &uploaded_file.id).await?;
-    println!(
-        "File '{}' deleted: {}",
-        delete_response.id, delete_response.deleted
-    );
+    /*
+        println!("\nDeleting the file...");
+        let delete_response = delete_file(&client, &uploaded_file.id).await?;
+        println!(
+            "File '{}' deleted: {}",
+            delete_response.id, delete_response.deleted
+        );
+    */
 
     Ok(())
 }

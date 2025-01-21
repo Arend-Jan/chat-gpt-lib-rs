@@ -56,7 +56,7 @@
 //! ## Contributing
 //!
 //! Contributions to this project are more than welcome! Feel free to open issues, submit pull requests,
-//! or suggest improvements. Please see our [GitHub repository](https://github.com/yourusername/openai-rust) for more details.
+//! or suggest improvements. Please see our [GitHub repository](https://github.com/Arend-Jan/chat-gpt-lib-rs) for more details.
 
 /// This module will contain the central configuration, including the `OpenAIClient` struct,
 /// environment variable helpers, and other utilities.
