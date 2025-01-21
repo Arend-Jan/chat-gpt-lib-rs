@@ -10,10 +10,10 @@
 //! - [`models`]: Retrieve and list available models
 //! - [`completions`]: Generate text completions
 //! - [`chat`]: Handle chat-based completions (ChatGPT)
+//! - [`embeddings`]: Obtain vector embeddings for text
 //!
 //! ## Planned Modules
 //!
-//! - `embeddings`: Obtain vector embeddings for text
 //! - `moderations`: Check text for policy violations
 //! - `fine_tunes`: Manage fine-tuning jobs
 //! - `files`: Upload and manage files
@@ -41,5 +41,6 @@
 
 pub mod chat;
 pub mod completions;
+pub mod embeddings;
 /// Resources for working with OpenAI Models.
 pub mod models;
