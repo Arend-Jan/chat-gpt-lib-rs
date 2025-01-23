@@ -14,7 +14,7 @@ use chat_gpt_lib_rs::OpenAIClient;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {
-    // Load environment variables from a .env file, if present (optional).
+    // load environment variables from a .env file, if present (optional).
     dotenvy::dotenv().ok();
 
     // Create a new client; this will look for the OPENAI_API_KEY environment variable.

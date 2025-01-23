@@ -22,6 +22,9 @@
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), OpenAIError> {
+//!     // load environment variables from a .env file, if present (optional).
+//!     dotenvy::dotenv().ok();
+//!
 //!     let client = OpenAIClient::new(None)?;
 //!     let request = CreateModerationRequest {
 //!         input: ModerationsInput::String("I hate you and want to harm you.".to_string()),

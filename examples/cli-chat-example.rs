@@ -33,10 +33,11 @@ async fn main() -> Result<(), OpenAIError> {
         .to_lowercase()
         .eq("true");
 
-    let model = env::var("CHAT_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
+    let model = env::var("CHAT_MODEL").unwrap_or_else(|_| "o1-preview".to_string());
 
-    let system_prompt = env::var("SYSTEM_PROMPT")
-        .unwrap_or_else(|_| "You are a cheerful and friendly assistant.".to_string());
+    let system_prompt = env::var("SYSTEM_PROMPT").unwrap_or_else(|_| {
+        "You are a high quality tech lead and are specialized in idiomatic Rust".to_string()
+    });
 
     let max_tokens: Option<u32> = env::var("MAX_TOKENS")
         .ok()

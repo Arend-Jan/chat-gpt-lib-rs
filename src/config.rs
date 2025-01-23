@@ -14,6 +14,9 @@
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!      // Load environment variables from a .env file, if present (optional).
+//!      dotenvy::dotenv().ok();
+//!
 //!     // Example 1: Use environment variable `OPENAI_API_KEY`.
 //!     let client = OpenAIClient::new(None)?;
 //!
@@ -73,7 +76,10 @@ impl OpenAIClient {
     /// # Examples
     ///
     /// ```rust
-    /// # use chat_gpt_lib_rs::OpenAIClient;
+    /// use chat_gpt_lib_rs::OpenAIClient;
+    /// // load environment variables from a .env file, if present (optional).
+    /// dotenvy::dotenv().ok();
+    ///
     /// // Reads `OPENAI_API_KEY` from the environment.
     /// let client = OpenAIClient::new(None).unwrap();
     ///

@@ -17,13 +17,13 @@
 //!
 //! Then in your code:
 //!
-//! ```rust
-//! use chat-gpt-lib-rs::{OpenAIClient, OpenAIError};
+//! ```rust,no-run
+//! use chat_gpt_lib_rs::{OpenAIClient, OpenAIError};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), OpenAIError> {
 //!     // Create the client (pull the API key from the OPENAI_API_KEY environment variable by default).
-//!     let client = OpenAIClient::new(None)?;
+//!     let client = OpenAIClient::new(Some("sk-...".to_string()))?;
 //!
 //!     // Now you can make calls like:
 //!     // let response = client.create_completion("text-davinci-003", "Hello, world!", 50, 0.7).await?;
