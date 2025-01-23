@@ -16,17 +16,19 @@ name = "cli-chat-example"
 path = "examples/cli-chat-example.rs"
 
 [dependencies]
+async-stream = "0.3"
+bytes = "1.9.0"
 env_logger = "0.11"
+futures-util = "0.3"
 log = "0.4"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "multipart", "stream"] }
 rustls = ">=0.23.5, <0.24.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-thiserror = "1.0.61"
+thiserror = "2.0"
 tokio = { version = "1.37", features = ["full"] }
 
 [dev-dependencies]
 dotenvy = "0.15"
 console = "0.15"
 indicatif = "0.17"
-
