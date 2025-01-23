@@ -1,6 +1,6 @@
 [package]
 name = "chat-gpt-lib-rs"
-version = "0.5.1"
+version = "0.6.0"
 edition = "2021"
 description = "A Rust library for interacting with OpenAI's ChatGPT API, providing a simple interface to make API requests and handle responses."
 license = "Apache-2.0"
