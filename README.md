@@ -3,107 +3,322 @@
 [![Codecov](https://codecov.io/github/arend-jan/chat-gpt-lib-rs/coverage.svg?branch=main)](https://codecov.io/gh/arend-jan/chat-gpt-lib-rs)
 [![Dependency status](https://deps.rs/repo/github/arend-jan/chat-gpt-lib-rs/status.svg)](https://deps.rs/repo/github/arend-jan/chat-gpt-lib-rs)
 
-# ChatGPT Rust Library
-A Rust library for interacting with OpenAI's ChatGPT API. This library simplifies the process of making requests to the ChatGPT API and parsing responses.
+# chat-gpt-lib-rs
+
+A **Rust** client library for the [OpenAI API](https://platform.openai.com/docs/api-reference).  
+Supports multiple OpenAI endpoints, including **Chat**, **Completions**, **Embeddings**, **Models**, **Moderations**, **Files**, **Fine-tunes**, and more. Built with **async**-first design using [Tokio](https://tokio.rs/) and [Reqwest](https://crates.io/crates/reqwest), featuring robust error handling and SSE streaming for real-time responses.
+
+> **Important**: This release introduces **breaking changes**. The project has been **significantly refactored**, and these updates are too complex for a standard migration guide. If you have existing code, you will likely need to adapt function calls and data structures to the new design. See the updated [examples](examples/) folder or the [documentation](https://docs.rs/chat-gpt-lib-rs) for guidance.
+
+---
+
+## Table of Contents
+
+1. [Features](#features)  
+2. [Installation](#installation)  
+3. [Quick Start](#quick-start)  
+4. [API Highlights](#api-highlights)  
+   - [Models](#models)  
+   - [Completions](#completions)  
+   - [Chat Completions](#chat-completions)  
+   - [Embeddings](#embeddings)  
+   - [Moderations](#moderations)  
+   - [Files](#files)  
+   - [Fine-Tunes](#fine-tunes)  
+5. [Environment Variables](#environment-variables)  
+6. [Streaming (SSE)](#streaming-sse)  
+7. [Example Projects](#example-projects)  
+8. [Contributing](#contributing)  
+9. [License](#license)
+
+---
 
 ## Features
-* Easy to use interface for interacting with the ChatGPT API
-* Strongly typed structures for request parameters and response data
-* Support for serialization and deserialization using Serde
-* An example CLI chat application that demonstrates library usage
-* An token estimation functionality
 
-Utilizes Rustls for the TLS layer, eliminating the need for OpenSSL and enabling seamless native execution on Linux with musl.
+- **Async-first**: Built on [Tokio](https://tokio.rs/) + [Reqwest](https://crates.io/crates/reqwest).  
+- **Complete Coverage** of major OpenAI API endpoints:
+  - **Chat** (with streaming SSE for partial responses)
+  - **Completions**  
+  - **Models** (list and retrieve)
+  - **Embeddings**  
+  - **Moderations**  
+  - **Files** (upload, list, download, delete)
+  - **Fine-Tunes** (create, list, retrieve, cancel, events, delete models)  
+- **Rustls** for TLS: avoids system dependencies like OpenSSL.  
+- **Thorough Error Handling** with custom [`OpenAIError`](https://docs.rs/chat-gpt-lib-rs/latest/chat_gpt_lib_rs/error/enum.OpenAIError.html).  
+- **Typed** request/response structures (Serde-based).  
+- **Extensive Documentation** and usage examples, including SSE streaming.
+
+---
 
 ## Installation
-Add the following line to your 'Cargo.toml' file under the '[dependencies]' section:
-```toml
-chat-gpt-lib-rs = "<put here the latest and greatest version number>"
-```
-Then, run cargo build to download and compile the dependencies.
 
-## Usage
-First, import the necessary components:
-```rust
-use chat_gpt_lib_rs::{ChatGPTClient, ChatInput, Message, Model, Role};
+In your `Cargo.toml`, under `[dependencies]`:
+
+```toml
+chat-gpt-lib-rs = "x.y.z"  # Replace x.y.z with the latest version
 ```
-Next, create a new client with your API key:
-```rust
-let api_key = "your_api_key_here";
-let base_url = "https://api.openai.com";
-let client = ChatGPTClient::new(api_key, base_url);
+
+Then build your project:
+
+```bash
+cargo build
 ```
-To send a chat message, create a ChatInput structure and call the chat method:
+
+---
+
+## Quick Start
+
+Below is a **minimal** example using **Completions**:
+
 ```rust
-let chat_input = ChatInput {
-    model: Model::Gpt_4o,
-    messages: vec![
-        Message {
-            role: Role::System,
-            content: "You are a helpful assistant.".to_string(),
-        },
-        Message {
-            role: Role::User,
-            content: "Who won the world series in 2020?".to_string(),
-        },
-    ],
+use chat_gpt_lib_rs::{OpenAIClient, OpenAIError};
+use chat_gpt_lib_rs::api_resources::completions::{create_completion, CreateCompletionRequest};
+
+#[tokio::main]
+async fn main() -> Result<(), OpenAIError> {
+    // Pass your API key directly or rely on the OPENAI_API_KEY environment variable
+    let client = OpenAIClient::new(None)?;
+
+    // Prepare a request to generate text completions
+    let request = CreateCompletionRequest {
+        model: "text-davinci-003".to_string(),
+        prompt: Some("Write a short advertisement for ice cream.".into()),
+        max_tokens: Some(50),
+        temperature: Some(0.7),
+        ..Default::default()
+    };
+
+    // Call the Completions API
+    let response = create_completion(&client, &request).await?;
+    println!("Completion Response:\n{:?}", response);
+
+    Ok(())
+}
+```
+
+---
+
+## API Highlights
+
+### Models
+
+```rust
+use chat_gpt_lib_rs::api_resources::models;
+
+let all_models = models::list_models(&client).await?;
+println!("Available Models: {:?}", all_models);
+
+let model_details = models::retrieve_model(&client, "text-davinci-003").await?;
+println!("Model details: {:?}", model_details);
+```
+
+### Completions
+
+```rust
+use chat_gpt_lib_rs::api_resources::completions::{
+    create_completion, CreateCompletionRequest
+};
+
+let req = CreateCompletionRequest {
+    model: "text-davinci-003".to_string(),
+    prompt: Some("Hello, world!".into()),
+    max_tokens: Some(50),
     ..Default::default()
 };
 
-let response = client.chat(chat_input).await.unwrap();
+let resp = create_completion(&client, &req).await?;
+println!("Completion:\n{:?}", resp);
 ```
-The response will be a 'ChatResponse' structure containing the API response data.
 
-## Example CLI Chat Application
-Two example CLI chat applications are provided in the examples folder:
+### Chat Completions
 
-### Simple Chat Application
-The cli-simple-chat-example.rs demonstrates how to use the chat-gpt-lib-rs library to interact with an AI model based on the GPT-3 architecture through a command-line interface. To run the example, first set your OPENAI_API_KEY in the .env file or as an environment variable, and then execute the following command:
-```sh
-cargo run --example cli-simple-chat-example
+```rust
+use chat_gpt_lib_rs::api_resources::chat::{
+    create_chat_completion, CreateChatCompletionRequest, ChatMessage, ChatRole
+};
+
+let chat_req = CreateChatCompletionRequest {
+    model: "gpt-3.5-turbo".into(),
+    messages: vec![
+        ChatMessage {
+            role: ChatRole::System,
+            content: "You are a helpful assistant.".to_string(),
+            name: None,
+        },
+        ChatMessage {
+            role: ChatRole::User,
+            content: "Give me a fun fact about Rust.".to_string(),
+            name: None,
+        },
+    ],
+    max_tokens: Some(50),
+    ..Default::default()
+};
+
+let response = create_chat_completion(&client, &chat_req).await?;
+println!("Chat reply:\n{:?}", response);
 ```
-The example will prompt the user to enter a question, and the AI chatbot will respond with an answer. The conversation will continue until the user exits the program.
 
-Optionally, you can provide initial user input as a command-line argument:
+### Embeddings
 
-```sh
-cargo run --example cli-simple-chat-example "Hello, computer!"
+```rust
+use chat_gpt_lib_rs::api_resources::embeddings::{
+    create_embeddings, CreateEmbeddingsRequest, EmbeddingsInput
+};
+
+let emb_req = CreateEmbeddingsRequest {
+    model: "text-embedding-ada-002".to_string(),
+    input: EmbeddingsInput::String("Hello world!".to_string()),
+    user: None,
+};
+let emb_res = create_embeddings(&client, &emb_req).await?;
+println!("Embedding:\n{:?}", emb_res.data[0].embedding);
 ```
-### Fancy Chat Application
-The cli-chat-example.rs demonstrates how to use the chat-gpt-lib-rs library to create an interactive AI chatbot with a command-line interface. To run the example, first set your OPENAI_API_KEY in the .env file or as an environment variable, and then execute the following command:
-```sh
-cargo run --example cli-chat-example
+
+### Moderations
+
+```rust
+use chat_gpt_lib_rs::api_resources::moderations::{
+    create_moderation, CreateModerationRequest, ModerationsInput
+};
+
+let mod_req = CreateModerationRequest {
+    input: ModerationsInput::String("I hate you and want to harm you.".into()),
+    model: None,
+};
+let mod_res = create_moderation(&client, &mod_req).await?;
+println!("Moderation result:\n{:?}", mod_res.results[0].flagged);
 ```
-The example will prompt the user to enter a message, and the AI chatbot will respond with an answer. The conversation will continue until the user exits the program.
 
-Optionally, you can provide initial user input as a command-line argument:
+### Files
 
-```sh
-cargo run --example cli-chat-example "Hello, computer!"
+```rust
+use chat_gpt_lib_rs::api_resources::files::{
+    upload_file, list_files, retrieve_file_content, delete_file,
+    UploadFilePurpose
+};
+use std::path::PathBuf;
+
+let file_path = PathBuf::from("training_data.jsonl");
+let upload = upload_file(&client, &file_path, UploadFilePurpose::FineTune).await?;
+println!("Uploaded file ID: {}", upload.id);
+
+let all_files = list_files(&client).await?;
+println!("All files: {:?}", all_files.data);
+
+let content = retrieve_file_content(&client, &upload.id).await?;
+println!("File content size: {}", content.len());
+
+delete_file(&client, &upload.id).await?;
 ```
-For an enhanced experience with icons, use a terminal that supports [Nerd Fonts](https://www.nerdfonts.com/). To enable this feature set you USE_ICONS=true in the .env file or as en environment variable.
 
-## Documentation
-For more details about the request parameters and response structure, refer to the [OpenAI API documentation](https://beta.openai.com/docs/api-reference/chat/create).
+### Fine-Tunes
 
+```rust
+use chat_gpt_lib_rs::api_resources::fine_tunes::{
+    create_fine_tune, list_fine_tunes, CreateFineTuneRequest
+};
+
+let ft_req = CreateFineTuneRequest {
+    training_file: "file-abc123".into(),
+    model: Some("curie".to_string()),
+    ..Default::default()
+};
+let job = create_fine_tune(&client, &ft_req).await?;
+println!("Created fine-tune job: {}", job.id);
+
+let all_jobs = list_fine_tunes(&client).await?;
+println!("All fine-tune jobs: {:?}", all_jobs.data);
+```
+
+---
+
+## Environment Variables
+
+By default, the library reads your OpenAI API key from **`OPENAI_API_KEY`**:
+
+```bash
+export OPENAI_API_KEY="sk-xxx"
+```
+
+Or use a `.env` file with [dotenvy](https://crates.io/crates/dotenvy).
+
+Alternatively, provide a key directly:
+
+```rust
+let client = OpenAIClient::new(Some("sk-your-key".to_string()))?;
+```
+
+---
+
+## Streaming (SSE)
+
+For **real-time** partial responses, pass `stream = true` to Chat or Completions endpoints and process the resulting stream:
+
+```rust
+use futures_util::StreamExt; 
+use chat_gpt_lib_rs::api_resources::chat::{
+    create_chat_completion_stream, CreateChatCompletionRequest, ChatMessage, ChatRole
+};
+
+#[tokio::main]
+async fn main() -> Result<(), chat_gpt_lib_rs::OpenAIError> {
+    let client = chat_gpt_lib_rs::OpenAIClient::new(None)?;
+    let request = CreateChatCompletionRequest {
+        model: "gpt-3.5-turbo".into(),
+        messages: vec![ChatMessage {
+            role: ChatRole::User,
+            content: "Tell me a joke.".to_string(),
+            name: None,
+        }],
+        stream: Some(true),
+        ..Default::default()
+    };
+
+    let mut stream = create_chat_completion_stream(&client, &request).await?;
+    while let Some(chunk_result) = stream.next().await {
+        match chunk_result {
+            Ok(partial) => {
+                println!("Chunk: {:?}", partial);
+            }
+            Err(e) => eprintln!("Stream error: {:?}", e),
+        }
+    }
+    println!("Done streaming.");
+    Ok(())
+}
+```
+
+---
+
+## Example Projects
+
+Check the `examples/` folder for CLI chat demos and more.
+
+**Third-Party Usage**:  
+- [techlead](https://crates.io/crates/techlead) uses this library for advanced AI-driven chat interactions.
+
+---
 
 ## Contributing
 
-We welcome contributions to the `chat-gpt-lib-rs` project! Whether it's reporting bugs, proposing new features, improving documentation, or contributing code, your help is greatly appreciated. Here's how you can contribute:
+We welcome contributions and feedback! To get started:
 
-1. **Fork the Repository**: Start by forking the `chat-gpt-lib-rs` repository to your own GitHub account. This will create a copy of the repository that you can modify without affecting the original project.
-2. **Create a Branch**: In your forked repository, create a new branch for the changes you want to make. This helps keep your changes separate from other changes and makes it easier to merge your changes later.
-3. **Make Your Changes**: Make your changes in the new branch. This could be fixing a bug, adding a new feature, improving documentation, or any other changes you think would improve the project.
-4. **Test Your Changes**: Make sure your changes work as expected and don't introduce any new bugs. If the project has a test suite, make sure your changes pass all the tests.
-5. **Submit a Pull Request**: Once you're happy with your changes, submit a pull request to merge your branch into the main `chat-gpt-lib-rs` repository. In your pull request, describe the changes you made and why you think they should be included in the project.
-6. **Address Review Feedback**: After you submit a pull request, other contributors to the project may review your changes and provide feedback. Be prepared to make additional changes or answer questions about your changes.
+1. **Fork** this repository and clone your fork locally.  
+2. **Create a branch** for your changes or fixes.  
+3. **Make & test** your changes.  
+4. **Submit a pull request** describing the changes.
 
-Remember, contributions to open source projects like `chat-gpt-lib-rs` are a collaborative effort. Be respectful and patient with other contributors, and remember that everyone is working together to improve the project.
+Because this release is a **major refactor**, please note that much of the code has changed. If you’re updating older code, see the new examples and docs for updated usage patterns.
 
-Thank you for your interest in contributing to `chat-gpt-lib-rs`!
-
-## Example project
-There is an interesting project [teachlead](https://crates.io/crates/techlead) now utilizing this project.
+---
 
 ## License
-This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+
+Licensed under the **Apache License 2.0**—see [LICENSE](LICENSE) for full details.
+
+---
+
+**Breaking Changes Note**:  
+Due to the **extensive** updates, we do **not** provide a direct migration guide. You may need to adapt your existing code to updated function signatures and data structures. Consult the new documentation and examples to get started quickly.
