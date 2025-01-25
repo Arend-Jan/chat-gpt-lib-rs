@@ -97,7 +97,8 @@ pub struct ModelPermission {
 #[derive(Debug, Deserialize)]
 struct ModelList {
     /// Indicates the object type (usually `"list"`).
-    object: String,
+    #[serde(rename = "object")] // keep the object for potential later use
+    _object: String,
     /// The actual list of models.
     data: Vec<Model>,
 }

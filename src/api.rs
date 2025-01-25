@@ -28,12 +28,11 @@
 //! }
 //! ```
 
-use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::config::OpenAIClient;
-use crate::error::{OpenAIAPIErrorBody, OpenAIError};
+use crate::error::OpenAIError;
 
 /// Sends a POST request with a JSON body to the given `endpoint`.
 ///
