@@ -10,7 +10,7 @@
 //! You can call [`create_moderation`] with a [`CreateModerationRequest`], specifying your input text(s)
 //! (and optionally, a specific model). The response (`CreateModerationResponse`) includes a list of
 //! [`ModerationResult`] objects—one per input. Each result contains a set of [`ModerationCategories`],
-//! matching confidence scores (`ModerationCategoryScores`), and a `flagged` boolean indicating if the
+//! matching confidence scores ([`ModerationCategoryScores`]), and a `flagged` boolean indicating if the
 //! text violates policy overall.
 //!
 //! # Example
@@ -123,13 +123,15 @@ pub struct ModerationCategories {
     #[serde(rename = "self-harm")]
     /// Content about self-harm or suicide.
     pub self_harm: bool,
+    /// If `true`, the text includes sexual content or references.
     pub sexual: bool,
     #[serde(rename = "sexual/minors")]
-    /// Sexual content involving minors.
+    /// If `true`, the text includes sexual content involving minors.
     pub sexual_minors: bool,
+    /// If `true`, the text includes violent content or context.
     pub violence: bool,
     #[serde(rename = "violence/graphic")]
-    /// Particularly graphic or gory violence.
+    /// If `true`, the text includes particularly graphic or gory violence.
     pub violence_graphic: bool,
 }
 
@@ -138,16 +140,23 @@ pub struct ModerationCategories {
 /// Higher values indicate higher model confidence that the content falls under that category.
 #[derive(Debug, Deserialize)]
 pub struct ModerationCategoryScores {
+    /// The confidence score for hateful content.
     pub hate: f64,
     #[serde(rename = "hate/threatening")]
+    /// The confidence score for hateful content that includes threats.
     pub hate_threatening: f64,
     #[serde(rename = "self-harm")]
+    /// The confidence score for self-harm or suicidal content.
     pub self_harm: f64,
+    /// The confidence score for sexual content or references.
     pub sexual: f64,
     #[serde(rename = "sexual/minors")]
+    /// The confidence score for sexual content involving minors.
     pub sexual_minors: f64,
+    /// The confidence score for violent content or context.
     pub violence: f64,
     #[serde(rename = "violence/graphic")]
+    /// The confidence score for particularly graphic or gory violence.
     pub violence_graphic: f64,
 }
 
