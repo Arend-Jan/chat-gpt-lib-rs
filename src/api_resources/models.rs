@@ -129,3 +129,187 @@ pub async fn retrieve_model(client: &OpenAIClient, model_id: &str) -> Result<Mod
     let endpoint = format!("models/{}", model_id);
     get_json(client, &endpoint).await
 }
+
+#[cfg(test)]
+mod tests {
+    /// # Tests for the `models` module
+    ///
+    /// We use [`wiremock`](https://crates.io/crates/wiremock) to simulate responses from
+    /// the **Models** API (`GET /v1/models` and `GET /v1/models/{id}`).
+    /// This covers:
+    /// 1. **list_models** – success & error
+    /// 2. **retrieve_model** – success & error
+    ///
+    use super::*;
+    use crate::config::OpenAIClient;
+    use crate::error::OpenAIError;
+    use serde_json::json;
+    use wiremock::matchers::{method, path, path_regex};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_list_models_success() {
+        // Start a local mock server
+        let mock_server = MockServer::start().await;
+
+        // Define a successful JSON response
+        let success_body = json!({
+            "object": "list",
+            "data": [
+                {
+                    "id": "text-davinci-003",
+                    "object": "model",
+                    "created": 1673643147,
+                    "owned_by": "openai",
+                    "permission": [
+                        {
+                            "id": "modelperm-abc123",
+                            "object": "model_permission",
+                            "created": 1673643000,
+                            "allow_create_engine": true,
+                            "allow_sampling": true,
+                            "allow_logprobs": true,
+                            "allow_search_indices": true,
+                            "allow_view": true,
+                            "allow_fine_tuning": true,
+                            "organization": "openai",
+                            "group": null,
+                            "is_blocking": false
+                        }
+                    ],
+                    "root": "text-davinci-003",
+                    "parent": null
+                }
+            ]
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/models"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        // Call the function under test
+        let result = list_models(&client).await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let models = result.unwrap();
+        assert_eq!(models.len(), 1);
+        let first_model = &models[0];
+        assert_eq!(first_model.id, "text-davinci-003");
+        assert_eq!(first_model.object, "model");
+        assert_eq!(first_model.owned_by, "openai");
+        assert!(first_model.permission.len() > 0);
+        assert_eq!(first_model.root.as_deref(), Some("text-davinci-003"));
+    }
+
+    #[tokio::test]
+    async fn test_list_models_api_error() {
+        let mock_server = MockServer::start().await;
+
+        // Mock an error response
+        let error_body = json!({
+            "error": {
+                "message": "Could not list models",
+                "type": "server_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/models"))
+            .respond_with(ResponseTemplate::new(500).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = list_models(&client).await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Could not list models"));
+            }
+            other => panic!("Expected APIError, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_model_success() {
+        let mock_server = MockServer::start().await;
+
+        let success_body = json!({
+            "id": "text-curie-001",
+            "object": "model",
+            "created": 1673645000,
+            "owned_by": "openai",
+            "permission": [],
+            "root": "text-curie-001",
+            "parent": null
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/models/text-curie-001$"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = retrieve_model(&client, "text-curie-001").await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let model = result.unwrap();
+        assert_eq!(model.id, "text-curie-001");
+        assert_eq!(model.object, "model");
+        assert_eq!(model.owned_by, "openai");
+        assert_eq!(model.permission.len(), 0);
+        assert_eq!(model.root.as_deref(), Some("text-curie-001"));
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_model_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = json!({
+            "error": {
+                "message": "Model not found",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/models/does-not-exist$"))
+            .respond_with(ResponseTemplate::new(404).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = retrieve_model(&client, "does-not-exist").await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Model not found"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+}
