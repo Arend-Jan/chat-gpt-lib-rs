@@ -10,7 +10,6 @@ use chat_gpt_lib_rs::api_resources::chat::{
 };
 use chat_gpt_lib_rs::error::OpenAIError;
 use chat_gpt_lib_rs::OpenAIClient;
-use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {

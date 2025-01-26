@@ -39,12 +39,10 @@
 use std::path::Path;
 
 use reqwest::multipart::{Form, Part};
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::api::get_json;
 use crate::config::OpenAIClient;
-use crate::error::{OpenAIError, OpenAIError::APIError};
+use crate::error::OpenAIError;
 
 /// The "purpose" parameter you must supply when uploading a file.
 ///

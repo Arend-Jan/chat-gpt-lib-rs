@@ -121,3 +121,186 @@ impl From<OpenAIAPIErrorBody> for OpenAIError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    //! # Tests for the `error` module
+    //!
+    //! We verify each variant of [`OpenAIError`] along with its convenience methods
+    //! (e.g. `api_error`) and `From<OpenAIAPIErrorBody>` implementation. This ensures
+    //! that errors are created, displayed, and converted as expected under various conditions.
+
+    use super::*;
+    use std::fmt::Write as _;
+
+    /// Produces a `reqwest::Error` by making a **blocking** request to an invalid URL.
+    /// This requires `reqwest` with the `"blocking"` feature enabled.
+    fn produce_reqwest_error() -> reqwest::Error {
+        // Attempting to make a request to a non-routable domain or an invalid protocol
+        reqwest::blocking::Client::new()
+            .get("http://this-domain-should-not-exist9999.test")
+            .send()
+            .unwrap_err()
+    }
+
+    /// Produces a `serde_json::Error` by parsing invalid JSON.
+    fn produce_serde_json_error() -> serde_json::Error {
+        serde_json::from_str::<serde_json::Value>("\"unterminated string").unwrap_err()
+    }
+
+    #[test]
+    fn test_config_error() {
+        let err = OpenAIError::ConfigError("No API key found".to_string());
+        let display_str = format!("{}", err);
+
+        // Verify it's the correct variant
+        match &err {
+            OpenAIError::ConfigError(msg) => {
+                assert_eq!(msg, "No API key found");
+            }
+            other => panic!("Expected ConfigError, got: {:?}", other),
+        }
+
+        // Check Display output
+        assert!(
+            display_str.contains("No API key found"),
+            "Display should contain the config error message, got: {}",
+            display_str
+        );
+    }
+
+    #[test]
+    fn test_http_error() {
+        let reqwest_err = produce_reqwest_error();
+        let err = OpenAIError::HTTPError(reqwest_err);
+
+        let display_str = format!("{}", err);
+        assert!(
+            display_str.contains("HTTP Error:"),
+            "Should contain 'HTTP Error:' prefix, got: {}",
+            display_str
+        );
+
+        // Pattern-match on &err
+        match &err {
+            OpenAIError::HTTPError(e) => {
+                let e_str = format!("{}", e);
+                // Accept multiple possible error messages
+                assert!(
+                    e_str.contains("error sending request")
+                        || e_str.contains("dns error")
+                        || e_str.contains("Could not resolve host")
+                        || e_str.contains("Name or service not known"),
+                    "Expected mention of DNS/resolve error or sending request, got: {}",
+                    e_str
+                );
+            }
+            other => panic!("Expected HTTPError, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_deserialize_error() {
+        // Produce a serde_json::Error, then convert to OpenAIError
+        let serde_err = produce_serde_json_error();
+        let err = OpenAIError::DeserializeError(serde_err);
+
+        // Display
+        let display_str = format!("{}", err);
+        assert!(
+            display_str.contains("Deserialization/Parsing Error:"),
+            "Should contain 'Deserialization/Parsing Error:', got: {}",
+            display_str
+        );
+
+        // Pattern-match on &err to avoid partial moves
+        match &err {
+            OpenAIError::DeserializeError(e) => {
+                let e_str = format!("{}", e);
+                assert!(
+                    e_str.contains("EOF while parsing a string")
+                        || e_str.contains("unterminated string"),
+                    "Expected mention of parse error about unterminated, got: {}",
+                    e_str
+                );
+            }
+            other => panic!("Expected DeserializeError, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_api_error() {
+        // Create an APIError variant via the convenience method
+        let err = OpenAIError::api_error(
+            "Something went wrong",
+            Some("invalid_request_error"),
+            Some("ERR123"),
+        );
+        let display_str = format!("{}", err);
+
+        match &err {
+            OpenAIError::APIError {
+                message,
+                err_type,
+                code,
+            } => {
+                assert_eq!(message, "Something went wrong");
+                assert_eq!(err_type.as_deref(), Some("invalid_request_error"));
+                assert_eq!(code.as_deref(), Some("ERR123"));
+            }
+            other => panic!("Expected APIError, got: {:?}", other),
+        }
+
+        // Check Display output
+        assert!(
+            display_str.contains("OpenAI API Error: Something went wrong"),
+            "Expected 'OpenAI API Error:' prefix, got: {}",
+            display_str
+        );
+    }
+
+    #[test]
+    fn test_from_openaiapierrorbody() {
+        let body = OpenAIAPIErrorBody {
+            error: OpenAIAPIErrorDetails {
+                message: "Rate limit exceeded".to_string(),
+                err_type: "rate_limit_error".to_string(),
+                code: Some("rate_limit_code".to_string()),
+            },
+        };
+        let err = OpenAIError::from(body);
+
+        match &err {
+            OpenAIError::APIError {
+                message,
+                err_type,
+                code,
+            } => {
+                assert_eq!(message, "Rate limit exceeded");
+                assert_eq!(err_type.as_deref(), Some("rate_limit_error"));
+                assert_eq!(code.as_deref(), Some("rate_limit_code"));
+            }
+            other => panic!("Expected APIError from error body, got: {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_display_trait_all_variants() {
+        let config_err = OpenAIError::ConfigError("missing key".to_string());
+        let http_err = OpenAIError::HTTPError(produce_reqwest_error());
+        let deser_err = OpenAIError::DeserializeError(produce_serde_json_error());
+        let api_err = OpenAIError::api_error("Remote server said no", Some("some_api_error"), None);
+
+        let mut combined = String::new();
+        writeln!(&mut combined, "{}", config_err).unwrap();
+        writeln!(&mut combined, "{}", http_err).unwrap();
+        writeln!(&mut combined, "{}", deser_err).unwrap();
+        writeln!(&mut combined, "{}", api_err).unwrap();
+
+        // Just a quick check of the combined output
+        assert!(combined.contains("Configuration Error: missing key"));
+        assert!(combined.contains("HTTP Error:"));
+        assert!(combined.contains("Deserialization/Parsing Error:"));
+        assert!(combined.contains("OpenAI API Error: Remote server said no"));
+    }
+}

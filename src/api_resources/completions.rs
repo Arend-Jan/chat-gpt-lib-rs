@@ -220,31 +220,37 @@ pub struct CreateCompletionRequest {
 }
 
 /// Default prompt is `<|endoftext|>`, per the specification.
+#[allow(dead_code)] // This way, Serde can still invoke them at runtime, but the compiler won’t complain.
 fn default_prompt() -> Option<PromptInput> {
     Some(PromptInput::String("<|endoftext|>".to_string()))
 }
 
 /// Default max_tokens is `16`.
+#[allow(dead_code)] // This way, Serde can still invoke them at runtime, but the compiler won’t complain.
 fn default_max_tokens() -> Option<u32> {
     Some(16)
 }
 
 /// Default temperature is `1.0`.
+#[allow(dead_code)] // This way, Serde can still invoke them at runtime, but the compiler won’t complain.
 fn default_temperature() -> Option<f64> {
     Some(1.0)
 }
 
 /// Default top_p is `1.0`.
+#[allow(dead_code)] // This way, Serde can still invoke them at runtime, but the compiler won’t complain.
 fn default_top_p() -> Option<f64> {
     Some(1.0)
 }
 
 /// Default `n` is `1`.
+#[allow(dead_code)] // This way, Serde can still invoke them at runtime, but the compiler won’t complain.
 fn default_n() -> Option<u32> {
     Some(1)
 }
 
 /// Default `best_of` is `1`.
+#[allow(dead_code)] // This way, Serde can still invoke them at runtime, but the compiler won’t complain.
 fn default_best_of() -> Option<u32> {
     Some(1)
 }

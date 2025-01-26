@@ -17,7 +17,7 @@
 //!
 //! Then in your code:
 //!
-//! ```rust,no-run
+//! ```rust,no_run
 //! use chat_gpt_lib_rs::{OpenAIClient, OpenAIError};
 //!
 //! #[tokio::main]

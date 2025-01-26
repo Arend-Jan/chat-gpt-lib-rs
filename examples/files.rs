@@ -61,14 +61,12 @@ async fn main() -> Result<(), OpenAIError> {
     );
 
     // Delete the file if you no longer need it
-    /*
-        println!("\nDeleting the file...");
-        let delete_response = delete_file(&client, &uploaded_file.id).await?;
-        println!(
-            "File '{}' deleted: {}",
-            delete_response.id, delete_response.deleted
-        );
-    */
+    println!("\nDeleting the file...");
+    let delete_response = delete_file(&client, &uploaded_file.id).await?;
+    println!(
+        "File '{}' deleted: {}",
+        delete_response.id, delete_response.deleted
+    );
 
     Ok(())
 }
