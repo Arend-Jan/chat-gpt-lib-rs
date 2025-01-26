@@ -106,14 +106,12 @@ async fn main() -> Result<(), OpenAIError> {
     // If the job is still in progress (e.g., "pending", "running"), and you decide not to
     // proceed, you can cancel it:
     //
-    // println!("\nCancelling the fine-tune job...");
-    // let cancelled_ft = cancel_fine_tune(&client, &fine_tune_response.id).await?;
-    // println!(
-    //     "Cancelled fine-tune: ID={} | Status={}",
-    //     cancelled_ft.id, cancelled_ft.status
-    // );
-    //
-    // Uncomment the lines above to try out the cancel functionality.
+    println!("\nCancelling the fine-tune job...");
+    let cancelled_ft = cancel_fine_tune(&client, &fine_tune_response.id).await?;
+    println!(
+        "Cancelled fine-tune: ID={} | Status={}",
+        cancelled_ft.id, cancelled_ft.status
+    );
 
     // -------------------------------------------------------------------------
     // 6. (Optional) Delete the resulting fine-tuned model after it completes
@@ -125,23 +123,22 @@ async fn main() -> Result<(), OpenAIError> {
     // If you want to remove that model from your account (and can do so, e.g. you own the model),
     // you can delete it:
     //
-    // if let Some(ref model_name) = retrieved_ft.fine_tuned_model {
-    //     // Make sure the job actually succeeded before trying to delete, otherwise you'll get an error.
-    //     if retrieved_ft.status == "succeeded" {
-    //         println!("\nDeleting the fine-tuned model: {}...", model_name);
-    //         let delete_response = delete_fine_tune_model(&client, model_name).await?;
-    //         println!(
-    //             "Model deletion response => object={}, id={}, deleted={}",
-    //             delete_response.object, delete_response.id, delete_response.deleted
-    //         );
-    //     } else {
-    //         println!(
-    //             "\nThe job has not succeeded yet (status={}). Cannot delete model: {}",
-    //             retrieved_ft.status,
-    //             model_name
-    //         );
-    //     }
-    // }
+    if let Some(ref model_name) = retrieved_ft.fine_tuned_model {
+        // Make sure the job actually succeeded before trying to delete, otherwise you'll get an error.
+        if retrieved_ft.status == "succeeded" {
+            println!("\nDeleting the fine-tuned model: {}...", model_name);
+            let delete_response = delete_fine_tune_model(&client, model_name).await?;
+            println!(
+                "Model deletion response => object={}, id={}, deleted={}",
+                delete_response.object, delete_response.id, delete_response.deleted
+            );
+        } else {
+            println!(
+                "\nThe job has not succeeded yet (status={}). Cannot delete model: {}",
+                retrieved_ft.status, model_name
+            );
+        }
+    }
 
     println!("\nExample completed. Check the logs above for details.");
     Ok(())
