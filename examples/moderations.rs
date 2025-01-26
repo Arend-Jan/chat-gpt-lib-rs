@@ -20,10 +20,14 @@ async fn main() -> Result<(), OpenAIError> {
     // Create a new client; this will look for the OPENAI_API_KEY environment variable.
     let client = OpenAIClient::new(None)?;
 
+    let moderation_text = "I hate you and want to harm you.".to_string();
+
+    println!("Text to moderate: {}", &moderation_text);
+
     // Create a Moderations request for a single piece of text.
     // We can also provide multiple texts with `ModerationsInput::Strings(...)`.
     let request = CreateModerationRequest {
-        input: ModerationsInput::String("I hate you and want to harm you.".to_string()),
+        input: ModerationsInput::String(moderation_text),
         // Optionally, specify a model like "text-moderation-latest" or "text-moderation-stable":
         model: None,
     };
