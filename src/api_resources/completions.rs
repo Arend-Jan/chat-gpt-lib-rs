@@ -325,3 +325,168 @@ pub async fn create_completion(
     let endpoint = "completions";
     post_json(client, endpoint, request).await
 }
+
+#[cfg(test)]
+mod tests {
+    /// # Tests for the `completions` module
+    ///
+    /// These tests use [`wiremock`](https://crates.io/crates/wiremock) to mock responses from the
+    /// `/v1/completions` endpoint. We cover:
+    /// 1. A successful JSON response, ensuring we can deserialize a [`CreateCompletionResponse`].
+    /// 2. A non-2xx OpenAI-style error, which should map to [`OpenAIError::APIError`].
+    /// 3. Malformed JSON that triggers a [`OpenAIError::DeserializeError`].
+    ///
+    use super::*;
+    use crate::config::OpenAIClient;
+    use crate::error::OpenAIError;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_create_completion_success() {
+        // Spin up a local mock server
+        let mock_server = MockServer::start().await;
+
+        // Mock JSON body for a successful 200 response
+        let success_body = json!({
+            "id": "cmpl-12345",
+            "object": "text_completion",
+            "created": 1673643147,
+            "model": "text-davinci-003",
+            "choices": [{
+                "text": "This is a funny cat joke!",
+                "index": 0,
+                "finish_reason": "stop"
+            }],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 7,
+                "total_tokens": 17
+            }
+        });
+
+        // Expect a POST to /v1/completions
+        Mock::given(method("POST"))
+            .and(path("/completions"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            // Override the base URL to the mock server
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        // Create a minimal request
+        let req = CreateCompletionRequest {
+            model: "text-davinci-003".to_string(),
+            prompt: Some(PromptInput::String("Tell me a cat joke".into())),
+            max_tokens: Some(20),
+            ..Default::default()
+        };
+
+        // Call the function under test
+        let result = create_completion(&client, &req).await;
+        assert!(result.is_ok(), "Expected success, got: {:?}", result);
+
+        let resp = result.unwrap();
+        assert_eq!(resp.id, "cmpl-12345");
+        assert_eq!(resp.object, "text_completion");
+        assert_eq!(resp.model, "text-davinci-003");
+        assert_eq!(resp.choices.len(), 1);
+
+        let choice = &resp.choices[0];
+        assert_eq!(choice.text, "This is a funny cat joke!");
+        assert_eq!(choice.index, 0);
+        assert_eq!(choice.finish_reason.as_deref(), Some("stop"));
+
+        let usage = resp.usage.as_ref().unwrap();
+        assert_eq!(usage.prompt_tokens, 10);
+        assert_eq!(usage.completion_tokens, 7);
+        assert_eq!(usage.total_tokens, 17);
+    }
+
+    #[tokio::test]
+    async fn test_create_completion_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = json!({
+            "error": {
+                "message": "Model is unavailable",
+                "type": "invalid_request_error",
+                "code": "model_unavailable"
+            }
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/completions"))
+            .respond_with(ResponseTemplate::new(404).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateCompletionRequest {
+            model: "unknown-model".into(),
+            prompt: Some(PromptInput::String("Hello".into())),
+            ..Default::default()
+        };
+
+        let result = create_completion(&client, &req).await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Model is unavailable"));
+            }
+            other => panic!("Expected APIError, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_completion_deserialize_error() {
+        let mock_server = MockServer::start().await;
+
+        // Return a 200 but with malformed JSON that doesn't match `CreateCompletionResponse`
+        let malformed_json = r#"{
+            "id": "cmpl-12345",
+            "object": "text_completion",
+            "created": "invalid_number",
+            "model": "text-davinci-003",
+            "choices": "should_be_array"
+        }"#;
+
+        Mock::given(method("POST"))
+            .and(path("/completions"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_raw(malformed_json, "application/json"),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateCompletionRequest {
+            model: "text-davinci-003".into(),
+            prompt: Some(PromptInput::String("Hello".into())),
+            ..Default::default()
+        };
+
+        let result = create_completion(&client, &req).await;
+        match result {
+            Err(OpenAIError::DeserializeError(_)) => {
+                // success
+            }
+            other => panic!("Expected DeserializeError, got {:?}", other),
+        }
+    }
+}

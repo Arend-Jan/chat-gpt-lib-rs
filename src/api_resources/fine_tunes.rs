@@ -316,3 +316,459 @@ pub struct DeleteFineTuneModelResponse {
     /// A message indicating the model was deleted.
     pub deleted: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    /// # Tests for the `fine_tunes` module
+    ///
+    /// We use [`wiremock`](https://crates.io/crates/wiremock) to simulate OpenAI's Fine-tunes API,
+    /// covering:
+    /// 1. **create_fine_tune** – success & error
+    /// 2. **list_fine_tunes** – success & error
+    /// 3. **retrieve_fine_tune** – success & error
+    /// 4. **cancel_fine_tune** – success & error
+    /// 5. **list_fine_tune_events** – success & error
+    /// 6. **delete_fine_tune_model** – success & error
+    ///
+    use super::*;
+    use crate::config::OpenAIClient;
+    use crate::error::OpenAIError;
+    use serde_json::json;
+    use wiremock::matchers::{method, path, path_regex};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_create_fine_tune_success() {
+        let mock_server = MockServer::start().await;
+
+        // Mock success response
+        let success_body = json!({
+            "id": "ft-abcdefgh",
+            "object": "fine-tune",
+            "created_at": 1673645000,
+            "updated_at": 1673645200,
+            "model": "curie",
+            "fine_tuned_model": null,
+            "status": "pending",
+            "events": []
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/fine-tunes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateFineTuneRequest {
+            training_file: "file-abc123".into(),
+            model: Some("curie".into()),
+            ..Default::default()
+        };
+
+        let result = create_fine_tune(&client, &req).await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let fine_tune = result.unwrap();
+        assert_eq!(fine_tune.id, "ft-abcdefgh");
+        assert_eq!(fine_tune.status, "pending");
+        assert_eq!(fine_tune.model, "curie");
+        assert!(fine_tune.fine_tuned_model.is_none());
+        assert_eq!(fine_tune.events.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_create_fine_tune_api_error() {
+        let mock_server = MockServer::start().await;
+
+        // Mock error
+        let error_body = json!({
+            "error": {
+                "message": "Invalid training file",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/fine-tunes"))
+            .respond_with(ResponseTemplate::new(400).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateFineTuneRequest {
+            training_file: "file-nonexistent".into(),
+            ..Default::default()
+        };
+
+        let result = create_fine_tune(&client, &req).await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Invalid training file"));
+            }
+            other => panic!("Expected APIError, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_list_fine_tunes_success() {
+        let mock_server = MockServer::start().await;
+
+        let success_body = json!({
+            "object": "list",
+            "data": [
+                {
+                    "id": "ft-abc123",
+                    "object": "fine-tune",
+                    "created_at": 1673645000,
+                    "updated_at": 1673645200,
+                    "model": "curie",
+                    "fine_tuned_model": "curie:ft-yourorg-2023-01-01-xxxx",
+                    "status": "succeeded",
+                    "events": []
+                }
+            ]
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/fine-tunes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = list_fine_tunes(&client).await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let list = result.unwrap();
+        assert_eq!(list.object, "list");
+        assert_eq!(list.data.len(), 1);
+        let first = &list.data[0];
+        assert_eq!(first.id, "ft-abc123");
+        assert_eq!(first.status, "succeeded");
+    }
+
+    #[tokio::test]
+    async fn test_list_fine_tunes_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = json!({
+            "error": {
+                "message": "Could not list fine-tunes",
+                "type": "internal_server_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/fine-tunes"))
+            .respond_with(ResponseTemplate::new(500).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = list_fine_tunes(&client).await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Could not list fine-tunes"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_fine_tune_success() {
+        let mock_server = MockServer::start().await;
+
+        let success_body = json!({
+            "id": "ft-xyz789",
+            "object": "fine-tune",
+            "created_at": 1673646000,
+            "updated_at": 1673646200,
+            "model": "curie",
+            "fine_tuned_model": null,
+            "status": "running",
+            "events": []
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/fine-tunes/ft-xyz789$"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = retrieve_fine_tune(&client, "ft-xyz789").await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let ft = result.unwrap();
+        assert_eq!(ft.id, "ft-xyz789");
+        assert_eq!(ft.status, "running");
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_fine_tune_api_error() {
+        let mock_server = MockServer::start().await;
+        let error_body = json!({
+            "error": {
+                "message": "Fine-tune not found",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/fine-tunes/ft-000$"))
+            .respond_with(ResponseTemplate::new(404).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = retrieve_fine_tune(&client, "ft-000").await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Fine-tune not found"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_cancel_fine_tune_success() {
+        let mock_server = MockServer::start().await;
+
+        let success_body = json!({
+            "id": "ft-abc123",
+            "object": "fine-tune",
+            "created_at": 1673647000,
+            "updated_at": 1673647200,
+            "model": "curie",
+            "fine_tuned_model": null,
+            "status": "cancelled",
+            "events": []
+        });
+
+        Mock::given(method("POST"))
+            .and(path_regex(r"^/fine-tunes/ft-abc123/cancel$"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = cancel_fine_tune(&client, "ft-abc123").await;
+        assert!(result.is_ok(), "Expected Ok, got {:?}", result);
+
+        let ft = result.unwrap();
+        assert_eq!(ft.id, "ft-abc123");
+        assert_eq!(ft.status, "cancelled");
+    }
+
+    #[tokio::test]
+    async fn test_cancel_fine_tune_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = json!({
+            "error": {
+                "message": "Cannot cancel a completed fine-tune",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("POST"))
+            .and(path_regex(r"^/fine-tunes/ft-zzz/cancel$"))
+            .respond_with(ResponseTemplate::new(400).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = cancel_fine_tune(&client, "ft-zzz").await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Cannot cancel a completed fine-tune"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_list_fine_tune_events_success() {
+        let mock_server = MockServer::start().await;
+
+        let success_body = json!({
+            "object": "list",
+            "data": [
+                {
+                    "object": "fine-tune-event",
+                    "created_at": 1673648000,
+                    "level": "info",
+                    "message": "Job enqueued"
+                },
+                {
+                    "object": "fine-tune-event",
+                    "created_at": 1673648100,
+                    "level": "info",
+                    "message": "Job started"
+                }
+            ]
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/fine-tunes/ft-abc/events$"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = list_fine_tune_events(&client, "ft-abc").await;
+        assert!(result.is_ok(), "Expected Ok, got {:?}", result);
+
+        let events_list = result.unwrap();
+        assert_eq!(events_list.object, "list");
+        assert_eq!(events_list.data.len(), 2);
+        assert_eq!(events_list.data[0].message, "Job enqueued");
+    }
+
+    #[tokio::test]
+    async fn test_list_fine_tune_events_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = json!({
+            "error": {
+                "message": "No events found",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/fine-tunes/ft-xyz/events$"))
+            .respond_with(ResponseTemplate::new(404).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = list_fine_tune_events(&client, "ft-xyz").await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("No events found"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_delete_fine_tune_model_success() {
+        let mock_server = MockServer::start().await;
+
+        let success_body = json!({
+            "object": "model",
+            "id": "curie:ft-yourorg-2023-01-01-xxxx",
+            "deleted": true
+        });
+
+        Mock::given(method("DELETE"))
+            .and(path_regex(r"^/models/curie:ft-yourorg-2023-01-01-xxxx$"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = delete_fine_tune_model(&client, "curie:ft-yourorg-2023-01-01-xxxx").await;
+        assert!(result.is_ok(), "Expected Ok, got {:?}", result);
+
+        let del_resp = result.unwrap();
+        assert_eq!(del_resp.object, "model");
+        assert_eq!(del_resp.id, "curie:ft-yourorg-2023-01-01-xxxx");
+        assert!(del_resp.deleted);
+    }
+
+    #[tokio::test]
+    async fn test_delete_fine_tune_model_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = json!({
+            "error": {
+                "message": "Model not found",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("DELETE"))
+            .and(path_regex(r"^/models/doesnotexist$"))
+            .respond_with(ResponseTemplate::new(404).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = delete_fine_tune_model(&client, "doesnotexist").await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Model not found"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+}

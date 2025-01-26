@@ -297,3 +297,401 @@ async fn handle_file_response(response: reqwest::Response) -> Result<FileObject,
         crate::api::parse_error_response(response).await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    //! # Tests for the `files` module
+    //!
+    //! Here we use [`wiremock`](https://crates.io/crates/wiremock) to simulate OpenAI's Files API:
+    //! 1. **Upload** a file with multipart form data
+    //! 2. **List** files
+    //! 3. **Retrieve** file metadata
+    //! 4. **Delete** a file
+    //! 5. **Retrieve** file content
+    //!
+    //! We test both **successful** (2xx) cases and **error** cases (non-2xx with an OpenAI-style error).
+    //! For the file upload, we use a temporary in-memory file to emulate reading bytes.
+
+    use super::*;
+    use crate::config::OpenAIClient;
+    use crate::error::OpenAIError;
+    use serde_json::json;
+    use std::io::Write as _;
+    use tempfile::NamedTempFile;
+    use wiremock::matchers::{method, path, path_regex};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    /// Creates a temporary file with specified contents for testing upload.
+    /// Returns the `NamedTempFile` handle so it gets cleaned up automatically.
+    fn create_temp_file(contents: &str) -> NamedTempFile {
+        let mut file = NamedTempFile::new().expect("Failed to create temp file");
+        write!(file, "{}", contents).expect("Unable to write to temp file");
+        file
+    }
+
+    #[tokio::test]
+    async fn test_upload_file_success() {
+        // Start a local mock server
+        let mock_server = MockServer::start().await;
+
+        // Simulate a successful 200 JSON response with file metadata
+        let success_body = json!({
+            "id": "file-abc123",
+            "object": "file",
+            "bytes": 1024,
+            "created_at": 1673643147,
+            "filename": "mydata.jsonl",
+            "purpose": "fine-tune",
+            "status": "uploaded",
+            "status_details": null
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/files"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        // Create a test client
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        // Create a temp file to mock reading local data
+        let temp_file = create_temp_file("some jsonl contents");
+        let result = upload_file(&client, temp_file.path(), UploadFilePurpose::FineTune).await;
+        assert!(result.is_ok(), "Expected success, got: {:?}", result);
+
+        let file_obj = result.unwrap();
+        assert_eq!(file_obj.id, "file-abc123");
+        assert_eq!(file_obj.object, "file");
+        assert_eq!(file_obj.bytes, 1024);
+        assert_eq!(file_obj.filename, "mydata.jsonl");
+        assert_eq!(file_obj.purpose, "fine-tune");
+        assert_eq!(file_obj.status.as_deref(), Some("uploaded"));
+    }
+
+    #[tokio::test]
+    async fn test_upload_file_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = json!({
+            "error": {
+                "message": "File size too large",
+                "type": "invalid_request_error",
+                "code": "file_size_exceeded"
+            }
+        });
+
+        // Return a 400 for the file upload
+        Mock::given(method("POST"))
+            .and(path("/files"))
+            .respond_with(ResponseTemplate::new(400).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let temp_file = create_temp_file("some jsonl contents");
+        let result = upload_file(&client, temp_file.path(), UploadFilePurpose::FineTune).await;
+
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("File size too large"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_upload_file_config_error_when_file_missing() {
+        // Test reading a non-existent file, which triggers a ConfigError from `upload_file`.
+        let mock_server = MockServer::start().await;
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let non_existent_path = std::path::Path::new("/some/path/that/does/not/exist.jsonl");
+        let result = upload_file(&client, non_existent_path, UploadFilePurpose::FineTune).await;
+        match result {
+            Err(OpenAIError::ConfigError(msg)) => {
+                assert!(
+                    msg.contains("Failed to read file:"),
+                    "Expected a file read error, got: {}",
+                    msg
+                );
+            }
+            other => panic!("Expected ConfigError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_list_files_success() {
+        let mock_server = MockServer::start().await;
+
+        let success_body = json!({
+            "object": "list",
+            "data": [
+                {
+                    "id": "file-xyz789",
+                    "object": "file",
+                    "bytes": 999,
+                    "created_at": 1673644000,
+                    "filename": "data.jsonl",
+                    "purpose": "fine-tune",
+                    "status": "uploaded",
+                    "status_details": null
+                }
+            ]
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/files"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = list_files(&client).await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let files = result.unwrap();
+        assert_eq!(files.object, "list");
+        assert_eq!(files.data.len(), 1);
+        let file_obj = &files.data[0];
+        assert_eq!(file_obj.id, "file-xyz789");
+        assert_eq!(file_obj.bytes, 999);
+    }
+
+    #[tokio::test]
+    async fn test_list_files_api_error() {
+        let mock_server = MockServer::start().await;
+        let error_body = json!({
+            "error": {
+                "message": "Could not list files",
+                "type": "internal_server_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/files"))
+            .respond_with(ResponseTemplate::new(500).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = list_files(&client).await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Could not list files"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_file_metadata_success() {
+        let mock_server = MockServer::start().await;
+        let success_body = json!({
+            "id": "file-abc123",
+            "object": "file",
+            "bytes": 2048,
+            "created_at": 1673645000,
+            "filename": "info.jsonl",
+            "purpose": "fine-tune",
+            "status": "uploaded",
+            "status_details": null
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/files/file-abc123$"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = retrieve_file_metadata(&client, "file-abc123").await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let file_obj = result.unwrap();
+        assert_eq!(file_obj.id, "file-abc123");
+        assert_eq!(file_obj.bytes, 2048);
+        assert_eq!(file_obj.filename, "info.jsonl");
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_file_metadata_api_error() {
+        let mock_server = MockServer::start().await;
+        let error_body = json!({
+            "error": {
+                "message": "File not found",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/files/file-999$"))
+            .respond_with(ResponseTemplate::new(404).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = retrieve_file_metadata(&client, "file-999").await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("File not found"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_file_content_success() {
+        let mock_server = MockServer::start().await;
+        let file_data = b"this is the file content";
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/files/file-abc123/content$"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_raw(file_data, "application/octet-stream"),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = retrieve_file_content(&client, "file-abc123").await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let content = result.unwrap();
+        assert_eq!(content, file_data);
+    }
+
+    #[tokio::test]
+    async fn test_retrieve_file_content_api_error() {
+        let mock_server = MockServer::start().await;
+        let error_body = json!({
+            "error": {
+                "message": "Content not found",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("GET"))
+            .and(path_regex(r"^/files/file-000/content$"))
+            .respond_with(ResponseTemplate::new(404).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = retrieve_file_content(&client, "file-000").await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Content not found"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_delete_file_success() {
+        let mock_server = MockServer::start().await;
+        let success_body = json!({
+            "id": "file-abc123",
+            "object": "file",
+            "deleted": true
+        });
+
+        Mock::given(method("DELETE"))
+            .and(path_regex(r"^/files/file-abc123$"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = delete_file(&client, "file-abc123").await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let del_resp = result.unwrap();
+        assert_eq!(del_resp.id, "file-abc123");
+        assert_eq!(del_resp.object, "file");
+        assert!(del_resp.deleted);
+    }
+
+    #[tokio::test]
+    async fn test_delete_file_api_error() {
+        let mock_server = MockServer::start().await;
+        let error_body = json!({
+            "error": {
+                "message": "No file with ID file-xyz found",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        Mock::given(method("DELETE"))
+            .and(path_regex(r"^/files/file-xyz$"))
+            .respond_with(ResponseTemplate::new(404).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let result = delete_file(&client, "file-xyz").await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("No file with ID file-xyz found"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+}

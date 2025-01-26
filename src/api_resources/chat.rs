@@ -61,7 +61,7 @@ use crate::error::OpenAIError;
 /// The role of a message in the chat sequence.
 ///
 /// Typically one of `system`, `user`, `assistant`. OpenAI may add or adjust roles in the future.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum ChatRole {
     /// For system-level instructions (e.g. "You are a helpful assistant.")
@@ -210,4 +210,175 @@ pub async fn create_chat_completion(
     // POST /v1/chat/completions
     let endpoint = "chat/completions";
     post_json(client, endpoint, request).await
+}
+
+#[cfg(test)]
+mod tests {
+    /// # Tests for the `chat` module
+    ///
+    /// We use [`wiremock`](https://crates.io/crates/wiremock) to mock responses from the
+    /// `/v1/chat/completions` endpoint. These tests ensure that:
+    /// 1. A successful JSON body is deserialized into [`CreateChatCompletionResponse`].
+    /// 2. Non-2xx responses with an OpenAI-style error body map to [`OpenAIError::APIError`].
+    /// 3. Malformed or mismatched JSON produces an [`OpenAIError::DeserializeError`].
+    ///
+    use super::*;
+    use crate::config::OpenAIClient;
+    use crate::error::OpenAIError;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_create_chat_completion_success() {
+        // Start a local mock server
+        let mock_server = MockServer::start().await;
+
+        // Mock successful response JSON
+        let success_body = json!({
+            "id": "chatcmpl-12345",
+            "object": "chat.completion",
+            "created": 1234567890,
+            "model": "o1-mini",
+            "choices": [{
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": "Here is a witty ice cream tagline!",
+                },
+                "finish_reason": "stop"
+            }],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15
+            }
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/chat/completions"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri()) // override base URL to mock server
+            .build()
+            .unwrap();
+
+        // Build a minimal request
+        let req = CreateChatCompletionRequest {
+            model: "o1-mini".to_string(),
+            messages: vec![ChatMessage {
+                role: ChatRole::User,
+                content: "Write me an ice cream tagline.".to_string(),
+                name: None,
+            }],
+            max_tokens: Some(50),
+            ..Default::default()
+        };
+
+        // Call the function under test
+        let result = create_chat_completion(&client, &req).await;
+        assert!(result.is_ok(), "Expected success, got: {:?}", result);
+
+        let resp = result.unwrap();
+        assert_eq!(resp.id, "chatcmpl-12345");
+        assert_eq!(resp.object, "chat.completion");
+        assert_eq!(resp.model, "o1-mini");
+        assert_eq!(resp.choices.len(), 1);
+
+        let first_choice = &resp.choices[0];
+        assert_eq!(first_choice.message.role, ChatRole::Assistant);
+        assert_eq!(
+            first_choice.message.content,
+            "Here is a witty ice cream tagline!"
+        );
+        assert_eq!(resp.usage.as_ref().unwrap().total_tokens, 15);
+    }
+
+    #[tokio::test]
+    async fn test_create_chat_completion_api_error() {
+        // Mock a 400 error with OpenAI-style error body
+        let mock_server = MockServer::start().await;
+        let error_body = json!({
+            "error": {
+                "message": "Invalid model ID",
+                "type": "invalid_request_error",
+                "code": "model_not_found"
+            }
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/chat/completions"))
+            .respond_with(ResponseTemplate::new(400).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateChatCompletionRequest {
+            model: "non_existent_model".to_string(),
+            messages: vec![],
+            ..Default::default()
+        };
+
+        let result = create_chat_completion(&client, &req).await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(
+                    message.contains("Invalid model ID"),
+                    "Expected an API error with 'Invalid model ID', got: {}",
+                    message
+                );
+            }
+            other => panic!("Expected APIError, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_chat_completion_deserialize_error() {
+        // Mock a 200 response with malformed or mismatched JSON
+        let mock_server = MockServer::start().await;
+        let malformed_json = r#"{
+            "id": "chatcmpl-12345",
+            "object": "chat.completion",
+            "created": "not_a_number",   // string instead of number
+            "model": "o1-mini",
+            "choices": "should_be_an_array"
+        }"#;
+
+        Mock::given(method("POST"))
+            .and(path("/chat/completions"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_raw(malformed_json, "application/json"),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateChatCompletionRequest {
+            model: "o1-mini".to_string(),
+            messages: vec![],
+            ..Default::default()
+        };
+
+        let result = create_chat_completion(&client, &req).await;
+
+        // Expect a deserialization error
+        match result {
+            Err(OpenAIError::DeserializeError(_)) => {} // success
+            other => panic!("Expected DeserializeError, got: {:?}", other),
+        }
+    }
 }
