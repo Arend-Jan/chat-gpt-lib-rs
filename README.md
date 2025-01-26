@@ -8,7 +8,7 @@
 A **Rust** client library for the [OpenAI API](https://platform.openai.com/docs/api-reference).  
 Supports multiple OpenAI endpoints, including **Chat**, **Completions**, **Embeddings**, **Models**, **Moderations**, **Files**, **Fine-tunes**, and more. Built with **async**-first design using [Tokio](https://tokio.rs/) and [Reqwest](https://crates.io/crates/reqwest), featuring robust error handling and SSE streaming for real-time responses.
 
-> **Important**: This release introduces **breaking changes**. The project has been **significantly refactored**, and these updates are too complex for a standard migration guide. If you have existing code, you will likely need to adapt function calls and data structures to the new design. See the updated [examples](examples/) folder or the [documentation](https://docs.rs/chat-gpt-lib-rs) for guidance.
+> **Important**: If you’re upgrading from **0.5.x** to **0.6.x**, please note that this transition introduces **significant, breaking changes**. The project has been extensively refactored, making it too complex for a straightforward migration guide. You will likely need to update function calls and data structures to align with the new design. Refer to the updated [examples](examples/) folder or the [documentation](https://docs.rs/chat-gpt-lib-rs) for detailed guidance.
 
 ---
 
