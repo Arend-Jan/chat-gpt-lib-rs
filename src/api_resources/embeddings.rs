@@ -147,3 +147,165 @@ pub async fn create_embeddings(
     let endpoint = "embeddings";
     post_json(client, endpoint, request).await
 }
+
+#[cfg(test)]
+mod tests {
+    /// # Tests for the `embeddings` module
+    ///
+    /// We rely on [`wiremock`](https://crates.io/crates/wiremock) to mock responses from the
+    /// `/v1/embeddings` endpoint. The tests ensure:
+    /// 1. A **success** case where we receive a valid embedding response (`CreateEmbeddingsResponse`).
+    /// 2. A **failure** case returning an OpenAI-style error (mapped to `OpenAIError::APIError`).
+    /// 3. A **deserialization error** case when the JSON is malformed.
+    ///
+    use super::*;
+    use crate::config::OpenAIClient;
+    use crate::error::OpenAIError;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_create_embeddings_success() {
+        // Start the local mock server
+        let mock_server = MockServer::start().await;
+
+        // Define a successful response JSON
+        let success_body = json!({
+            "object": "list",
+            "data": [
+                {
+                    "object": "embedding",
+                    "index": 0,
+                    "embedding": [0.123, -0.456, 0.789]
+                },
+                {
+                    "object": "embedding",
+                    "index": 1,
+                    "embedding": [0.111, 0.222, 0.333]
+                }
+            ],
+            "model": "text-embedding-ada-002",
+            "usage": {
+                "prompt_tokens": 5,
+                "total_tokens": 5
+            }
+        });
+
+        // Mock a POST to /v1/embeddings
+        Mock::given(method("POST"))
+            .and(path("/embeddings"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateEmbeddingsRequest {
+            model: "text-embedding-ada-002".to_string(),
+            input: EmbeddingsInput::Strings(vec!["Hello".to_string(), "World".to_string()]),
+            user: None,
+        };
+
+        let result = create_embeddings(&client, &req).await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let resp = result.unwrap();
+        assert_eq!(resp.object, "list");
+        assert_eq!(resp.data.len(), 2);
+        assert_eq!(resp.model, "text-embedding-ada-002");
+
+        let first = &resp.data[0];
+        assert_eq!(first.object, "embedding");
+        assert_eq!(first.index, 0);
+        assert_eq!(first.embedding, vec![0.123, -0.456, 0.789]);
+
+        let usage = resp.usage.as_ref().unwrap();
+        assert_eq!(usage.prompt_tokens, 5);
+        assert_eq!(usage.total_tokens, 5);
+    }
+
+    #[tokio::test]
+    async fn test_create_embeddings_api_error() {
+        let mock_server = MockServer::start().await;
+
+        // Simulate a 400 error with an OpenAI-style error body
+        let error_body = json!({
+            "error": {
+                "message": "Invalid model: text-embedding-ada-999",
+                "type": "invalid_request_error",
+                "code": "model_invalid"
+            }
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/embeddings"))
+            .respond_with(ResponseTemplate::new(400).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateEmbeddingsRequest {
+            model: "text-embedding-ada-999".to_string(),
+            input: EmbeddingsInput::String("test input".to_string()),
+            user: Some("user-123".to_string()),
+        };
+
+        let result = create_embeddings(&client, &req).await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Invalid model: text-embedding-ada-999"));
+            }
+            other => panic!("Expected APIError, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_embeddings_deserialize_error() {
+        let mock_server = MockServer::start().await;
+
+        // Return 200 but invalid or mismatched JSON
+        let malformed_json = r#"{
+            "object": "list",
+            "data": "should be an array of embeddings, not a string",
+            "model": "text-embedding-ada-002"
+        }"#;
+
+        Mock::given(method("POST"))
+            .and(path("/embeddings"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_raw(malformed_json, "application/json"),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateEmbeddingsRequest {
+            model: "text-embedding-ada-002".to_string(),
+            input: EmbeddingsInput::String("Hello".to_string()),
+            user: None,
+        };
+
+        let result = create_embeddings(&client, &req).await;
+        match result {
+            Err(OpenAIError::DeserializeError(_)) => {
+                // success
+            }
+            other => panic!("Expected DeserializeError, got {:?}", other),
+        }
+    }
+}
