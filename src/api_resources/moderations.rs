@@ -184,3 +184,171 @@ pub async fn create_moderation(
     let endpoint = "moderations";
     post_json(client, endpoint, request).await
 }
+
+#[cfg(test)]
+mod tests {
+    /// # Tests for the `moderations` module
+    ///
+    /// These tests use [`wiremock`](https://crates.io/crates/wiremock) to simulate the
+    /// [OpenAI Moderations API](https://platform.openai.com/docs/api-reference/moderations).
+    /// We specifically test [`create_moderation`] for:
+    /// 1. A **success** scenario where it returns a valid [`CreateModerationResponse`].
+    /// 2. An **API error** scenario with a non-2xx response.
+    /// 3. A **deserialization** scenario where JSON is malformed.
+    ///
+    use super::*;
+    use crate::config::OpenAIClient;
+    use crate::error::OpenAIError;
+    use serde_json::json;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_create_moderation_success() {
+        // Start a local mock server
+        let mock_server = MockServer::start().await;
+
+        // Example success response
+        let success_body = json!({
+            "id": "modr-abc123",
+            "model": "text-moderation-latest",
+            "results": [
+                {
+                    "flagged": true,
+                    "categories": {
+                        "hate": true,
+                        "hate/threatening": false,
+                        "self-harm": false,
+                        "sexual": false,
+                        "sexual/minors": false,
+                        "violence": true,
+                        "violence/graphic": false
+                    },
+                    "category_scores": {
+                        "hate": 0.98,
+                        "hate/threatening": 0.25,
+                        "self-harm": 0.05,
+                        "sexual": 0.0,
+                        "sexual/minors": 0.0,
+                        "violence": 0.85,
+                        "violence/graphic": 0.1
+                    }
+                }
+            ]
+        });
+
+        // Mock a 200 response on /v1/moderations
+        Mock::given(method("POST"))
+            .and(path("/moderations"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(success_body))
+            .mount(&mock_server)
+            .await;
+
+        // Build a test client
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        // Minimal request
+        let req = CreateModerationRequest {
+            input: ModerationsInput::String("some potentially hateful text".to_string()),
+            model: Some("text-moderation-latest".to_string()),
+        };
+
+        let result = create_moderation(&client, &req).await;
+        assert!(result.is_ok(), "Expected Ok, got: {:?}", result);
+
+        let resp = result.unwrap();
+        assert_eq!(resp.id, "modr-abc123");
+        assert_eq!(resp.model, "text-moderation-latest");
+        assert_eq!(resp.results.len(), 1);
+
+        let first = &resp.results[0];
+        assert!(first.flagged);
+        assert!(first.categories.hate);
+        assert!(first.categories.violence);
+        assert!(!first.categories.hate_threatening);
+        assert_eq!(first.category_scores.hate, 0.98);
+        assert_eq!(first.category_scores.violence, 0.85);
+    }
+
+    #[tokio::test]
+    async fn test_create_moderation_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = json!({
+            "error": {
+                "message": "Invalid model",
+                "type": "invalid_request_error",
+                "code": null
+            }
+        });
+
+        // Mock a 400 error on POST /moderations
+        Mock::given(method("POST"))
+            .and(path("/moderations"))
+            .respond_with(ResponseTemplate::new(400).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateModerationRequest {
+            input: ModerationsInput::Strings(vec!["test text".into()]),
+            model: Some("text-moderation-unknown".to_string()),
+        };
+
+        let result = create_moderation(&client, &req).await;
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Invalid model"));
+            }
+            other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_moderation_deserialize_error() {
+        let mock_server = MockServer::start().await;
+
+        // Return 200 with malformed JSON
+        let malformed_body = r#"{
+          "id": "modr-12345",
+          "model": "text-moderation-latest",
+          "results": "should_be_array_not_string"
+        }"#;
+
+        Mock::given(method("POST"))
+            .and(path("/moderations"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_raw(malformed_body, "application/json"),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req = CreateModerationRequest {
+            input: ModerationsInput::String("Another text".to_string()),
+            model: None,
+        };
+
+        let result = create_moderation(&client, &req).await;
+        match result {
+            Err(OpenAIError::DeserializeError(_)) => {
+                // success
+            }
+            other => panic!("Expected DeserializeError, got {:?}", other),
+        }
+    }
+}
