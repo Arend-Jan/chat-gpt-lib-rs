@@ -4,7 +4,7 @@
 //! configuration issues, HTTP/network problems, or API-level responses indicating invalid requests,
 //! rate limits, and so on.
 //!
-//! # Examples
+//! # Example
 //!
 //! ```rust
 //! use chat_gpt_lib_rs::OpenAIError;
