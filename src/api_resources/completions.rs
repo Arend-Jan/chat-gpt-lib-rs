@@ -327,7 +327,7 @@ pub async fn create_completion(
 }
 
 /// Creates a streaming text completion using the OpenAI Completions API.
-/// 
+///
 /// When the `stream` field in the request is set to `Some(true)`, the API
 /// will return partial responses as a stream. This function returns an asynchronous
 /// stream of [`CreateCompletionResponse`] objects. Each item in the stream represents
@@ -335,7 +335,10 @@ pub async fn create_completion(
 pub async fn create_completion_stream(
     client: &OpenAIClient,
     request: &CreateCompletionRequest,
-) -> Result<impl tokio_stream::Stream<Item = Result<CreateCompletionResponse, OpenAIError>>, OpenAIError> {
+) -> Result<
+    impl tokio_stream::Stream<Item = Result<CreateCompletionResponse, OpenAIError>>,
+    OpenAIError,
+> {
     let endpoint = "completions";
     post_json_stream(client, endpoint, request).await
 }
