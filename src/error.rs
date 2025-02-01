@@ -310,8 +310,11 @@ mod tests {
         match &err {
             OpenAIError::IOError(e) => {
                 let e_str = format!("{}", e);
+                let lower = e_str.to_lowercase();
                 assert!(
-                    e_str.contains("No such file") || e_str.contains("not found"),
+                    lower.contains("no such file")
+                        || lower.contains("not found")
+                        || lower.contains("os error 2"),
                     "Expected mention of file not found error, got: {}",
                     e_str
                 );
