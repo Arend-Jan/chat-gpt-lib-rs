@@ -24,6 +24,7 @@ use thiserror::Error;
 /// 2. Network/HTTP errors encountered while making requests.
 /// 3. Errors returned by the OpenAI API itself (e.g., rate limits, invalid parameters).
 /// 4. JSON parsing errors (e.g., unexpected response formats).
+/// 5. IO errors that might occur during operations like file handling.
 #[derive(Debug, Error)]
 pub enum OpenAIError {
     /// Errors related to invalid configuration or missing environment variables.
@@ -58,6 +59,10 @@ pub enum OpenAIError {
         #[allow(dead_code)]
         code: Option<String>,
     },
+
+    /// Errors that occur during I/O operations.
+    #[error("IO Error: {0}")]
+    IOError(#[from] std::io::Error),
 }
 
 impl OpenAIError {
@@ -146,6 +151,11 @@ mod tests {
     /// Produces a `serde_json::Error` by parsing invalid JSON.
     fn produce_serde_json_error() -> serde_json::Error {
         serde_json::from_str::<serde_json::Value>("\"unterminated string").unwrap_err()
+    }
+
+    /// Produces a `std::io::Error` by trying to open a non-existent file.
+    fn produce_io_error() -> std::io::Error {
+        std::fs::File::open("non_existent_file.txt").unwrap_err()
     }
 
     #[test]
@@ -285,22 +295,54 @@ mod tests {
     }
 
     #[test]
+    fn test_io_error() {
+        let io_err = produce_io_error();
+        let err: OpenAIError = io_err.into();
+
+        let display_str = format!("{}", err);
+        assert!(
+            display_str.contains("IO Error:"),
+            "Display should contain 'IO Error:' prefix, got: {}",
+            display_str
+        );
+
+        // Pattern-match on &err
+        match &err {
+            OpenAIError::IOError(e) => {
+                let e_str = format!("{}", e);
+                let lower = e_str.to_lowercase();
+                assert!(
+                    lower.contains("no such file")
+                        || lower.contains("not found")
+                        || lower.contains("os error 2"),
+                    "Expected mention of file not found error, got: {}",
+                    e_str
+                );
+            }
+            other => panic!("Expected IOError, got: {:?}", other),
+        }
+    }
+
+    #[test]
     fn test_display_trait_all_variants() {
         let config_err = OpenAIError::ConfigError("missing key".to_string());
         let http_err = OpenAIError::HTTPError(produce_reqwest_error());
         let deser_err = OpenAIError::DeserializeError(produce_serde_json_error());
         let api_err = OpenAIError::api_error("Remote server said no", Some("some_api_error"), None);
+        let io_err = OpenAIError::IOError(produce_io_error());
 
         let mut combined = String::new();
         writeln!(&mut combined, "{}", config_err).unwrap();
         writeln!(&mut combined, "{}", http_err).unwrap();
         writeln!(&mut combined, "{}", deser_err).unwrap();
         writeln!(&mut combined, "{}", api_err).unwrap();
+        writeln!(&mut combined, "{}", io_err).unwrap();
 
         // Just a quick check of the combined output
         assert!(combined.contains("Configuration Error: missing key"));
         assert!(combined.contains("HTTP Error:"));
         assert!(combined.contains("Deserialization/Parsing Error:"));
         assert!(combined.contains("OpenAI API Error: Remote server said no"));
+        assert!(combined.contains("IO Error:"));
     }
 }

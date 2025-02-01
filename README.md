@@ -257,35 +257,61 @@ let client = OpenAIClient::new(Some("sk-your-key".to_string()))?;
 For **real-time** partial responses, pass `stream = true` to Chat or Completions endpoints and process the resulting stream:
 
 ```rust
-use futures_util::StreamExt; 
+use futures_util::StreamExt; // Import the extension trait for streams
+use std::io::{self, Write};  // For flushing stdout
 use chat_gpt_lib_rs::api_resources::chat::{
-    create_chat_completion_stream, CreateChatCompletionRequest, ChatMessage, ChatRole
+    create_chat_completion_stream, CreateChatCompletionRequest, ChatMessage, ChatRole,
 };
+use chat_gpt_lib_rs::OpenAIClient;
+use chat_gpt_lib_rs::error::OpenAIError;
 
 #[tokio::main]
-async fn main() -> Result<(), chat_gpt_lib_rs::OpenAIError> {
-    let client = chat_gpt_lib_rs::OpenAIClient::new(None)?;
+async fn main() -> Result<(), OpenAIError> {
+    // Create a new OpenAI client (API key is read from the environment, e.g. OPENAI_API_KEY)
+    let client = OpenAIClient::new(None)?;
+
+    // Build a chat request with a system prompt and a user message.
+    // Note: Setting `stream: Some(true)` enables streaming responses.
     let request = CreateChatCompletionRequest {
         model: "gpt-3.5-turbo".into(),
-        messages: vec![ChatMessage {
-            role: ChatRole::User,
-            content: "Tell me a joke.".to_string(),
-            name: None,
-        }],
+        messages: vec![
+            ChatMessage {
+                role: ChatRole::System,
+                content: "You are a helpful assistant.".to_string(),
+                name: None,
+            },
+            ChatMessage {
+                role: ChatRole::User,
+                content: "Tell me a joke.".to_string(),
+                name: None,
+            },
+        ],
         stream: Some(true),
         ..Default::default()
     };
 
+    println!("Sending chat streaming request...");
+
+    // Retrieve the streaming response from the API.
+    // Each item in the stream is a partial update (chunk) containing a delta.
     let mut stream = create_chat_completion_stream(&client, &request).await?;
     while let Some(chunk_result) = stream.next().await {
         match chunk_result {
-            Ok(partial) => {
-                println!("Chunk: {:?}", partial);
+            Ok(chunk) => {
+                // Each chunk contains a list of choices.
+                // For streaming responses, the incremental text is in the `delta.content` field.
+                if let Some(choice) = chunk.choices.first() {
+                    if let Some(text) = &choice.delta.content {
+                        // Print the incremental text without a newline and flush stdout immediately.
+                        print!("{}", text);
+                        io::stdout().flush().unwrap();
+                    }
+                }
             }
             Err(e) => eprintln!("Stream error: {:?}", e),
         }
     }
-    println!("Done streaming.");
+    println!("\nDone streaming.");
     Ok(())
 }
 ```

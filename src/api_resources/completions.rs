@@ -47,7 +47,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::api::post_json;
+use crate::api::{post_json, post_json_stream};
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
 
@@ -324,6 +324,23 @@ pub async fn create_completion(
 ) -> Result<CreateCompletionResponse, OpenAIError> {
     let endpoint = "completions";
     post_json(client, endpoint, request).await
+}
+
+/// Creates a streaming text completion using the OpenAI Completions API.
+///
+/// When the `stream` field in the request is set to `Some(true)`, the API
+/// will return partial responses as a stream. This function returns an asynchronous
+/// stream of [`CreateCompletionResponse`] objects. Each item in the stream represents
+/// a partial response until the final message is received (typically signaled by `[DONE]`).
+pub async fn create_completion_stream(
+    client: &OpenAIClient,
+    request: &CreateCompletionRequest,
+) -> Result<
+    impl tokio_stream::Stream<Item = Result<CreateCompletionResponse, OpenAIError>>,
+    OpenAIError,
+> {
+    let endpoint = "completions";
+    post_json_stream(client, endpoint, request).await
 }
 
 #[cfg(test)]
