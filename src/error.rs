@@ -149,6 +149,19 @@ mod tests {
     }
 
     #[test]
+    fn test_io_error() {
+        let error = produce_reqwest_error();
+        let error_str = format!("{}", error);
+        let error_lower = error_str.to_lowercase();
+        // Check for either "not found" (case-insensitive) or "os error 2"
+        assert!(
+            error_lower.contains("not found") || error_lower.contains("os error 2"),
+            "Expected mention of a file not found error, got: {}",
+            error_str
+        );
+    }
+
+    #[test]
     fn test_config_error() {
         let err = OpenAIError::ConfigError("No API key found".to_string());
         let display_str = format!("{}", err);
