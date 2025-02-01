@@ -54,7 +54,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::api::post_json;
+use crate::api::{post_json, post_json_stream};
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
 
@@ -189,6 +189,51 @@ pub struct ChatCompletionUsage {
     pub total_tokens: u32,
 }
 
+/// --- Streaming Types ---
+///
+/// The streaming endpoint returns partial updates (chunks) with a slightly different
+/// JSON structure. We define separate types to deserialize these chunks.
+///
+
+/// Represents the delta (partial update) in a streaming chat completion.
+#[derive(Debug, Deserialize)]
+pub struct ChatCompletionDelta {
+    /// May be present in the first chunk, indicating the role (typically "assistant").
+    pub role: Option<String>,
+    /// Partial content for the message.
+    pub content: Option<String>,
+}
+
+/// A single choice within a streaming chat completion chunk.
+#[derive(Debug, Deserialize)]
+pub struct ChatCompletionChunkChoice {
+    /// The index of this choice within the chunk.
+    pub index: u32,
+    /// The delta containing the partial message update.
+    pub delta: ChatCompletionDelta,
+    /// Optional log probabilities for this choice.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub logprobs: Option<serde_json::Value>,
+    /// Optional finish reason indicating why generation ended (if applicable).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub finish_reason: Option<String>,
+}
+
+/// A streaming chat completion chunk returned by the API.
+#[derive(Debug, Deserialize)]
+pub struct CreateChatCompletionChunk {
+    /// The unique identifier for this chat completion chunk.
+    pub id: String,
+    /// The type of the returned object (e.g., "chat.completion.chunk").
+    pub object: String,
+    /// The creation time (in epoch seconds) for this chunk.
+    pub created: u64,
+    /// The model used to generate the completion.
+    pub model: String,
+    /// A list of choices contained in this chunk.
+    pub choices: Vec<ChatCompletionChunkChoice>,
+}
+
 /// Creates a chat-based completion using the [OpenAI Chat Completions API](https://platform.openai.com/docs/api-reference/chat).
 ///
 /// # Parameters
@@ -210,6 +255,20 @@ pub async fn create_chat_completion(
     // POST /v1/chat/completions
     let endpoint = "chat/completions";
     post_json(client, endpoint, request).await
+}
+
+/// Creates a streaming chat-based completion using the OpenAI Chat Completions API.
+/// When `stream` is set to `Some(true)`, partial updates (chunks) are returned.
+/// Each item in the stream is a partial update represented by [`CreateChatCompletionChunk`].
+pub async fn create_chat_completion_stream(
+    client: &OpenAIClient,
+    request: &CreateChatCompletionRequest,
+) -> Result<
+    impl tokio_stream::Stream<Item = Result<CreateChatCompletionChunk, OpenAIError>>,
+    OpenAIError,
+> {
+    let endpoint = "chat/completions";
+    post_json_stream(client, endpoint, request).await
 }
 
 #[cfg(test)]

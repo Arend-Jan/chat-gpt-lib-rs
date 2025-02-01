@@ -1,38 +1,24 @@
 //! The `api` module contains low-level functions for making HTTP requests to the OpenAI API.
+
 //! It handles authentication headers, organization headers, error parsing, and JSON (de)serialization.
 //!
 //! # Usage
 //!
 //! This module is not typically used directly. Instead, higher-level modules (e.g., for
 //! Completions, Chat, Embeddings, etc.) will call these functions to perform network requests.
-//!
-//! ```ignore
-//! // Example usage in a hypothetical endpoints module:
-//! use crate::api::{post_json};
-//! use crate::config::OpenAIClient;
-//! use crate::error::OpenAIError;
-//!
-//! // Suppose you have a function that creates a text completion...
-//! pub async fn create_completion(
-//!     client: &OpenAIClient,
-//!     prompt: &str
-//! ) -> Result<CompletionResponse, OpenAIError> {
-//!     let request_body = CompletionRequest {
-//!         model: "text-davinci-003".to_owned(),
-//!         prompt: prompt.to_owned(),
-//!         max_tokens: 100,
-//!         temperature: 0.7,
-//!     };
-//!
-//!     post_json(client, "completions", &request_body).await
-//! }
-//! ```
-
-use serde::de::DeserializeOwned;
-use serde::Serialize;
 
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+
+// Import for streaming support:
+use futures_util::stream::TryStreamExt;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio_stream::wrappers::LinesStream;
+use tokio_stream::Stream; // Trait for streams.
+use tokio_stream::StreamExt as TokioStreamExt; // Needed for filter_map.
+use tokio_util::io::StreamReader;
 
 /// Sends a POST request with a JSON body to the given `endpoint`.
 ///
@@ -131,7 +117,7 @@ where
         let text = response.text().await?;
 
         // 2) Attempt to parse with serde_json. If it fails, map to `OpenAIError::DeserializeError`
-        let parsed: R = serde_json::from_str(&text).map_err(OpenAIError::from)?; // This uses your `From<serde_json::Error> for OpenAIError::DeserializeError`
+        let parsed: R = serde_json::from_str(&text).map_err(OpenAIError::from)?;
 
         Ok(parsed)
     } else {
@@ -146,9 +132,8 @@ pub async fn parse_error_response<R>(response: reqwest::Response) -> Result<R, O
     let text_body = response.text().await.unwrap_or_else(|_| "".to_string());
 
     match serde_json::from_str::<crate::error::OpenAIAPIErrorBody>(&text_body) {
-        Ok(body) => Err(OpenAIError::from(body)), // Convert to OpenAIError::APIError
+        Ok(body) => Err(OpenAIError::from(body)),
         Err(_) => {
-            // If we couldn't parse the expected error JSON, return a more generic error message.
             let msg = format!(
                 "HTTP {} returned from OpenAI API; body: {}",
                 status, text_body
@@ -162,6 +147,109 @@ pub async fn parse_error_response<R>(response: reqwest::Response) -> Result<R, O
     }
 }
 
+/// Sends a POST request with a JSON body to the given `endpoint` and returns a stream of responses.
+/// This is designed for endpoints that support streaming responses (e.g., Chat Completions with `stream = true`).
+///
+/// # Parameters
+///
+/// - `client`: The [`OpenAIClient`](crate::config::OpenAIClient) holding base URL, API key, etc.
+/// - `endpoint`: The relative endpoint (e.g., `"chat/completions"`) appended to the base URL.
+/// - `body`: A serializable request body.
+///
+/// # Returns
+///
+/// A stream of deserialized items of type `R`. Each item represents a partial response from the server.
+///
+/// # Errors
+///
+/// Returns an [`OpenAIError`] if the initial request fails or if the HTTP response indicates an error.
+///
+/// # Dependencies
+///
+/// This function uses the latest versions of `tokio-stream` and `tokio-util`.
+pub async fn post_json_stream<T, R>(
+    client: &OpenAIClient,
+    endpoint: &str,
+    body: &T,
+) -> Result<impl Stream<Item = Result<R, OpenAIError>>, OpenAIError>
+where
+    T: Serialize,
+    R: DeserializeOwned + 'static,
+{
+    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
+    let mut request_builder = client.http_client.post(&url).bearer_auth(client.api_key());
+
+    if let Some(org_id) = client.organization() {
+        request_builder = request_builder.header("OpenAI-Organization", org_id);
+    }
+
+    let response = request_builder.json(body).send().await?;
+
+    let status = response.status();
+    if !status.is_success() {
+        let text_body = response.text().await.unwrap_or_else(|_| "".to_string());
+        match serde_json::from_str::<crate::error::OpenAIAPIErrorBody>(&text_body) {
+            Ok(body_err) => return Err(OpenAIError::from(body_err)),
+            Err(_) => {
+                return Err(OpenAIError::APIError {
+                    message: format!(
+                        "HTTP {} returned from OpenAI API; body: {}",
+                        status, text_body
+                    ),
+                    err_type: None,
+                    code: None,
+                })
+            }
+        }
+    }
+
+    // Convert the response's byte stream into an async reader.
+    let byte_stream = response
+        .bytes_stream()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e));
+    let stream_reader = StreamReader::new(byte_stream);
+    let buf_reader = BufReader::new(stream_reader);
+
+    // Create a stream of lines from the buffered reader.
+    let lines = LinesStream::new(buf_reader.lines());
+
+    // Process each line synchronously:
+    //   - Ignore empty lines or those that contain "[DONE]".
+    //   - Remove the "data:" prefix if present.
+    //   - Attempt to deserialize the remaining JSON into type `R`.
+    let stream = lines.filter_map(|line_result| {
+        match line_result {
+            Ok(line) => {
+                let trimmed = line.trim();
+                // Skip empty lines or termination markers.
+                if trimmed.is_empty() || trimmed.contains("[DONE]") {
+                    None
+                } else {
+                    // Remove the "data:" prefix if it exists.
+                    let data = if trimmed.starts_with("data:") {
+                        trimmed.trim_start_matches("data:").trim()
+                    } else {
+                        trimmed
+                    };
+                    // Attempt to deserialize the JSON.
+                    match serde_json::from_str::<R>(data) {
+                        Ok(parsed) => Some(Ok(parsed)),
+                        Err(e) => {
+                            eprintln!(
+                                "Warning: failed to deserialize chunk: {:?} (error: {})",
+                                data, e
+                            );
+                            None // Skip this chunk on deserialization error.
+                        }
+                    }
+                }
+            }
+            Err(e) => Some(Err(OpenAIError::from(e))),
+        }
+    });
+    Ok(stream)
+}
+
 #[cfg(test)]
 mod tests {
     /// # Tests for the `api` module
@@ -169,7 +257,6 @@ mod tests {
     /// These tests use [`wiremock`](https://crates.io/crates/wiremock) to **mock** HTTP responses from
     /// the OpenAI API, ensuring we can verify request-building, JSON handling, and error parsing logic
     /// without hitting real servers.
-    ///
     use super::*;
     use crate::config::OpenAIClient;
     use crate::error::{OpenAIError, OpenAIError::APIError};
@@ -202,7 +289,7 @@ mod tests {
         // Construct an OpenAIClient that points to our mock server URL
         let client = OpenAIClient::builder()
             .with_api_key("test-key")
-            .with_base_url(&mock_server.uri()) // wiremock server
+            .with_base_url(&mock_server.uri())
             .build()
             .unwrap();
 
