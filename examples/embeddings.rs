@@ -8,6 +8,7 @@
 use chat_gpt_lib_rs::api_resources::embeddings::{
     create_embeddings, CreateEmbeddingsRequest, EmbeddingsInput,
 };
+use chat_gpt_lib_rs::api_resources::models::Model;
 use chat_gpt_lib_rs::error::OpenAIError;
 use chat_gpt_lib_rs::OpenAIClient;
 
@@ -19,7 +20,7 @@ async fn main() -> Result<(), OpenAIError> {
     let client = OpenAIClient::new(None)?; // Reads API key from OPENAI_API_KEY
 
     let request = CreateEmbeddingsRequest {
-        model: "text-embedding-ada-002".to_string(),
+        model: Model::TextEmbeddingAda002,
         input: EmbeddingsInput::String("Hello world".to_string()),
         user: None,
     };
@@ -28,7 +29,7 @@ async fn main() -> Result<(), OpenAIError> {
     for (i, emb) in response.data.iter().enumerate() {
         println!("Embedding #{}: vector size = {}", i, emb.embedding.len());
     }
-    println!("Model used: {}", response.model);
+    println!("Model used: {:?}", response.model);
     if let Some(usage) = &response.usage {
         println!(
             "Usage => prompt_tokens: {}, total_tokens: {}",
