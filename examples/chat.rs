@@ -8,6 +8,7 @@
 use chat_gpt_lib_rs::api_resources::chat::{
     create_chat_completion, ChatMessage, ChatRole, CreateChatCompletionRequest,
 };
+use chat_gpt_lib_rs::api_resources::models::Model;
 use chat_gpt_lib_rs::error::OpenAIError;
 use chat_gpt_lib_rs::OpenAIClient;
 
@@ -22,7 +23,7 @@ async fn main() -> Result<(), OpenAIError> {
 
     // Build a chat request, including a system message and a user prompt
     let request = CreateChatCompletionRequest {
-        model: "gpt-4".to_string(),
+        model: Model::Gpt4,
         messages: vec![
             ChatMessage {
                 role: ChatRole::System,
