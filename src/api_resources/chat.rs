@@ -196,8 +196,6 @@ pub struct ChatCompletionUsage {
 ///
 /// The streaming endpoint returns partial updates (chunks) with a slightly different
 /// JSON structure. We define separate types to deserialize these chunks.
-///
-
 /// Represents the delta (partial update) in a streaming chat completion.
 #[derive(Debug, Deserialize)]
 pub struct ChatCompletionDelta {

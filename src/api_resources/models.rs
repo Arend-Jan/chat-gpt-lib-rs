@@ -142,6 +142,7 @@ pub async fn retrieve_model(
 /// We manually implement `Serialize`/`Deserialize` so that known variants map exactly to the
 /// expected strings, and all unknown strings map to `Other(String)`.
 #[derive(Debug, Clone, PartialEq)]
+#[derive(Default)]
 pub enum Model {
     /// The `gpt-4o-mini-audio-preview` model (owned by system).
     Gpt4oMiniAudioPreview,
@@ -158,6 +159,7 @@ pub enum Model {
     /// The `o1-preview-2024-09-12` model (owned by system).
     O1Preview2024_09_12,
     /// The `o1-mini` model (owned by system).
+    #[default]
     O1Mini,
     /// The `o1-preview` model (owned by system).
     O1Preview,
@@ -244,12 +246,6 @@ pub enum Model {
     Other(String),
 }
 
-impl Default for Model {
-    fn default() -> Self {
-        // Pick whichever variant you want as a default
-        Model::O1Mini
-    }
-}
 
 /// Internal helper to convert a model string into a known variant, or `Other(...)` if unrecognized.
 fn parse_model_str(s: &str) -> Model {
