@@ -44,6 +44,5 @@ pub mod completions;
 pub mod embeddings;
 pub mod files;
 pub mod fine_tunes;
-/// Resources for working with OpenAI Models.
 pub mod models;
 pub mod moderations;

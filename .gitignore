@@ -1,3 +1,5 @@
 /target
+/vendor
 /Cargo.lock
+/.cargo
 .env

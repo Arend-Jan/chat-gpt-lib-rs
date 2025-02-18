@@ -20,7 +20,7 @@
 //!     let client = OpenAIClient::new(None)?; // Reads API key from OPENAI_API_KEY
 //!
 //!     let request = CreateEmbeddingsRequest {
-//!         model: "text-embedding-ada-002".to_string(),
+//!         model: "text-embedding-ada-002".into(),
 //!         input: EmbeddingsInput::String("Hello world".to_string()),
 //!         user: None,
 //!     };
@@ -29,7 +29,7 @@
 //!     for (i, emb) in response.data.iter().enumerate() {
 //!         println!("Embedding #{}: vector size = {}", i, emb.embedding.len());
 //!     }
-//!     println!("Model used: {}", response.model);
+//!     println!("Model used: {:?}", response.model);
 //!     if let Some(usage) = &response.usage {
 //!         println!("Usage => prompt_tokens: {}, total_tokens: {}",
 //!             usage.prompt_tokens, usage.total_tokens);
@@ -44,6 +44,8 @@ use serde::{Deserialize, Serialize};
 use crate::api::post_json;
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
+
+use super::models::Model;
 
 /// Represents the diverse ways the input can be supplied for embeddings:
 ///
@@ -74,7 +76,7 @@ pub enum EmbeddingsInput {
 pub struct CreateEmbeddingsRequest {
     /// **Required.** The ID of the model to use.
     /// For example: `"text-embedding-ada-002"`.
-    pub model: String,
+    pub model: Model,
     /// **Required.** The input text or tokens for which you want to generate embeddings.
     pub input: EmbeddingsInput,
     /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
@@ -93,7 +95,7 @@ pub struct CreateEmbeddingsResponse {
     /// The list of embeddings returned, each containing an index and the embedding vector.
     pub data: Vec<EmbeddingData>,
     /// The model used for creating these embeddings.
-    pub model: String,
+    pub model: Model,
     /// Optional usage statistics for this request.
     #[serde(default)]
     pub usage: Option<EmbeddingsUsage>,
@@ -206,7 +208,7 @@ mod tests {
             .unwrap();
 
         let req = CreateEmbeddingsRequest {
-            model: "text-embedding-ada-002".to_string(),
+            model: "text-embedding-ada-002".into(),
             input: EmbeddingsInput::Strings(vec!["Hello".to_string(), "World".to_string()]),
             user: None,
         };
@@ -217,7 +219,7 @@ mod tests {
         let resp = result.unwrap();
         assert_eq!(resp.object, "list");
         assert_eq!(resp.data.len(), 2);
-        assert_eq!(resp.model, "text-embedding-ada-002");
+        assert_eq!(resp.model, "text-embedding-ada-002".into());
 
         let first = &resp.data[0];
         assert_eq!(first.object, "embedding");
@@ -255,7 +257,7 @@ mod tests {
             .unwrap();
 
         let req = CreateEmbeddingsRequest {
-            model: "text-embedding-ada-999".to_string(),
+            model: "text-embedding-ada-999".into(),
             input: EmbeddingsInput::String("test input".to_string()),
             user: Some("user-123".to_string()),
         };
@@ -295,7 +297,7 @@ mod tests {
             .unwrap();
 
         let req = CreateEmbeddingsRequest {
-            model: "text-embedding-ada-002".to_string(),
+            model: "text-embedding-ada-002".into(),
             input: EmbeddingsInput::String("Hello".to_string()),
             user: None,
         };

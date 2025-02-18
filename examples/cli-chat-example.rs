@@ -118,7 +118,7 @@ async fn process_user_input(
 
     // Prepare the ChatInput object for the API call
     let request = CreateChatCompletionRequest {
-        model: model.clone(),
+        model: model.into(),
         messages: messages.clone(),
         max_tokens,
         temperature,

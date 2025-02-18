@@ -27,7 +27,7 @@
 //!     let client = OpenAIClient::new(None)?; // Reads API key from OPENAI_API_KEY
 //!
 //!     let request = CreateCompletionRequest {
-//!         model: "gpt-3.5-turbo-instruct".to_string(),
+//!         model: "gpt-3.5-turbo-instruct".into(),
 //!         // `PromptInput::String` variant if we just have a single prompt text
 //!         prompt: Some(PromptInput::String("Tell me a joke about cats".to_string())),
 //!         max_tokens: Some(50),
@@ -50,6 +50,8 @@ use serde::{Deserialize, Serialize};
 use crate::api::{post_json, post_json_stream};
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
+
+use super::models::Model;
 
 /// Represents the diverse ways a prompt can be supplied:
 ///
@@ -105,7 +107,7 @@ pub struct ChatCompletionStreamOptions {
 pub struct CreateCompletionRequest {
     /// **Required.** ID of the model to use. For example: `"gpt-3.5-turbo-instruct"`, `"davinci-002"`,
     /// or `"text-davinci-003"`.
-    pub model: String,
+    pub model: Model,
 
     /// **Required.** The prompt(s) to generate completions for.
     /// Defaults to `<|endoftext|>` if not provided.
@@ -267,7 +269,7 @@ pub struct CreateCompletionResponse {
     /// The creation time in epoch seconds.
     pub created: u64,
     /// The model used for this request.
-    pub model: String,
+    pub model: Model,
     /// A list of generated completions.
     pub choices: Vec<CompletionChoice>,
     /// Token usage data (optional field).
@@ -399,7 +401,7 @@ mod tests {
 
         // Create a minimal request
         let req = CreateCompletionRequest {
-            model: "text-davinci-003".to_string(),
+            model: "text-davinci-003".into(),
             prompt: Some(PromptInput::String("Tell me a cat joke".into())),
             max_tokens: Some(20),
             ..Default::default()
@@ -412,7 +414,7 @@ mod tests {
         let resp = result.unwrap();
         assert_eq!(resp.id, "cmpl-12345");
         assert_eq!(resp.object, "text_completion");
-        assert_eq!(resp.model, "text-davinci-003");
+        assert_eq!(resp.model, "text-davinci-003".into());
         assert_eq!(resp.choices.len(), 1);
 
         let choice = &resp.choices[0];

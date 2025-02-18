@@ -29,7 +29,7 @@ async fn main() -> Result<(), OpenAIError> {
 
     // Build our request for text completions
     let request = CreateCompletionRequest {
-        model: "gpt-3.5-turbo-instruct".to_string(),
+        model: "gpt-3.5-turbo-instruct".into(),
         prompt: Some(PromptInput::String(prompt_text.to_owned())),
         max_tokens: Some(50),
         temperature: Some(0.7),

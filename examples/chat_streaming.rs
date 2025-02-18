@@ -25,7 +25,7 @@ async fn main() -> Result<(), OpenAIError> {
 
     // Build a chat request. Note that we enable streaming by setting `stream: Some(true)`.
     let request = CreateChatCompletionRequest {
-        model: "gpt-3.5-turbo".to_string(),
+        model: "gpt-3.5-turbo".into(),
         messages: vec![
             ChatMessage {
                 role: ChatRole::System,
