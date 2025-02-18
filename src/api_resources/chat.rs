@@ -15,6 +15,7 @@
 //!
 //! ```rust,no_run
 //! use chat_gpt_lib_rs::api_resources::chat::{create_chat_completion, CreateChatCompletionRequest, ChatMessage, ChatRole};
+//! use chat_gpt_lib_rs::api_resources::models::Model;
 //! use chat_gpt_lib_rs::error::OpenAIError;
 //! use chat_gpt_lib_rs::OpenAIClient;
 //!
@@ -23,7 +24,7 @@
 //!     let client = OpenAIClient::new(None)?; // Reads API key from OPENAI_API_KEY
 //!
 //!     let request = CreateChatCompletionRequest {
-//!         model: "o1-mini".to_string(),
+//!         model: Model::O1Mini,
 //!         messages: vec![
 //!             ChatMessage {
 //!                 role: ChatRole::System,
@@ -57,6 +58,8 @@ use std::collections::HashMap;
 use crate::api::{post_json, post_json_stream};
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
+
+use crate::api_resources::models::Model;
 
 /// The role of a message in the chat sequence.
 ///
@@ -109,8 +112,8 @@ pub struct ChatMessage {
 #[derive(Debug, Serialize, Default, Clone)]
 pub struct CreateChatCompletionRequest {
     /// **Required**. The model used for this chat request.
-    /// Examples: "gpt-3.5-turbo", "gpt-4".
-    pub model: String,
+    /// Examples: "Model::O1Mini", "Model::Other("gpt-4".to_string)".
+    pub model: Model,
 
     /// **Required**. The messages that make up the conversation so far.
     pub messages: Vec<ChatMessage>,
@@ -193,8 +196,6 @@ pub struct ChatCompletionUsage {
 ///
 /// The streaming endpoint returns partial updates (chunks) with a slightly different
 /// JSON structure. We define separate types to deserialize these chunks.
-///
-
 /// Represents the delta (partial update) in a streaming chat completion.
 #[derive(Debug, Deserialize)]
 pub struct ChatCompletionDelta {
@@ -328,7 +329,7 @@ mod tests {
 
         // Build a minimal request
         let req = CreateChatCompletionRequest {
-            model: "o1-mini".to_string(),
+            model: Model::Other("o1-mini".to_string()),
             messages: vec![ChatMessage {
                 role: ChatRole::User,
                 content: "Write me an ice cream tagline.".to_string(),
@@ -382,7 +383,7 @@ mod tests {
             .unwrap();
 
         let req = CreateChatCompletionRequest {
-            model: "non_existent_model".to_string(),
+            model: Model::Other("non_existent_model".to_string()),
             messages: vec![],
             ..Default::default()
         };
@@ -427,7 +428,7 @@ mod tests {
             .unwrap();
 
         let req = CreateChatCompletionRequest {
-            model: "o1-mini".to_string(),
+            model: Model::Other("o1-mini".to_string()),
             messages: vec![],
             ..Default::default()
         };

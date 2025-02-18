@@ -28,7 +28,7 @@
 //!     let client = OpenAIClient::new(None)?;
 //!     let request = CreateModerationRequest {
 //!         input: ModerationsInput::String("I hate you and want to harm you.".to_string()),
-//!         model: None, // or Some("text-moderation-latest".to_string())
+//!         model: None, // or Some("text-moderation-latest".into())
 //!     };
 //!
 //!     let response = create_moderation(&client, &request).await?;
@@ -49,6 +49,8 @@ use serde::{Deserialize, Serialize};
 use crate::api::post_json;
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
+
+use super::models::Model;
 
 /// Represents the multiple ways the input can be supplied for moderations:
 ///
@@ -82,7 +84,7 @@ pub struct CreateModerationRequest {
     /// If omitted, the default model is used.  
     /// See [OpenAI's docs](https://platform.openai.com/docs/api-reference/moderations) for details.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub model: Option<String>,
+    pub model: Option<Model>,
 }
 
 /// The response returned by the OpenAI Moderations API.
@@ -93,7 +95,7 @@ pub struct CreateModerationResponse {
     /// An identifier for this moderation request (e.g., "modr-xxxxxx").
     pub id: String,
     /// The moderation model used.
-    pub model: String,
+    pub model: Model,
     /// A list of moderation results—one per input in `CreateModerationRequest.input`.
     pub results: Vec<ModerationResult>,
 }
@@ -254,7 +256,7 @@ mod tests {
         // Minimal request
         let req = CreateModerationRequest {
             input: ModerationsInput::String("some potentially hateful text".to_string()),
-            model: Some("text-moderation-latest".to_string()),
+            model: Some("text-moderation-latest".into()),
         };
 
         let result = create_moderation(&client, &req).await;
@@ -262,7 +264,7 @@ mod tests {
 
         let resp = result.unwrap();
         assert_eq!(resp.id, "modr-abc123");
-        assert_eq!(resp.model, "text-moderation-latest");
+        assert_eq!(resp.model, "text-moderation-latest".into());
         assert_eq!(resp.results.len(), 1);
 
         let first = &resp.results[0];
@@ -301,7 +303,7 @@ mod tests {
 
         let req = CreateModerationRequest {
             input: ModerationsInput::Strings(vec!["test text".into()]),
-            model: Some("text-moderation-unknown".to_string()),
+            model: Some("text-moderation-unknown".into()),
         };
 
         let result = create_moderation(&client, &req).await;
