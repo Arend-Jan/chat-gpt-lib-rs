@@ -5,12 +5,12 @@
 //! cargo run --example chat
 //! ```
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::chat::{
-    create_chat_completion, ChatMessage, ChatRole, CreateChatCompletionRequest,
+    ChatMessage, ChatRole, CreateChatCompletionRequest, create_chat_completion,
 };
 use chat_gpt_lib_rs::api_resources::models::Model;
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {

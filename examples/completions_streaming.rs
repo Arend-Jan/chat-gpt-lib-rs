@@ -5,11 +5,11 @@
 //! cargo run --example completions
 //! ```
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::completions::{
-    create_completion_stream, CreateCompletionRequest, PromptInput,
+    CreateCompletionRequest, PromptInput, create_completion_stream,
 };
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 use futures_util::StreamExt;
 use std::io::{self, Write}; // Import flush functionality // Brings `next()` into scope.
 

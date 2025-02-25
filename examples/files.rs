@@ -11,12 +11,12 @@
 
 use std::path::PathBuf;
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::files::{
-    delete_file, list_files, retrieve_file_content, retrieve_file_metadata, upload_file,
-    UploadFilePurpose,
+    UploadFilePurpose, delete_file, list_files, retrieve_file_content, retrieve_file_metadata,
+    upload_file,
 };
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {
