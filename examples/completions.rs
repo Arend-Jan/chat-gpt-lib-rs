@@ -5,11 +5,11 @@
 //! cargo run --example completions
 //! ```
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::completions::{
-    create_completion, CreateCompletionRequest, PromptInput,
+    CreateCompletionRequest, PromptInput, create_completion,
 };
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {

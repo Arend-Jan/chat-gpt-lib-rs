@@ -5,12 +5,12 @@
 //! cargo run --example embeddings
 //! ```
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::embeddings::{
-    create_embeddings, CreateEmbeddingsRequest, EmbeddingsInput,
+    CreateEmbeddingsRequest, EmbeddingsInput, create_embeddings,
 };
 use chat_gpt_lib_rs::api_resources::models::Model;
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {

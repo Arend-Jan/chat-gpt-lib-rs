@@ -5,15 +5,15 @@
 //! cargo run --example chat
 //! ```
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::chat::{
-    create_chat_completion, ChatMessage, ChatRole, CreateChatCompletionRequest,
+    ChatMessage, ChatRole, CreateChatCompletionRequest, create_chat_completion,
 };
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
-use console::{style, StyledObject};
+use console::{StyledObject, style};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::env;
-use std::io::{stdin, stdout, Write};
+use std::io::{Write, stdin, stdout};
 use std::iter::Skip;
 use std::time::Duration;
 

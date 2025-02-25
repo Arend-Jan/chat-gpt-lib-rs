@@ -297,19 +297,57 @@ mod tests {
     use super::*;
     use crate::error::OpenAIError;
     use serial_test::serial; // <-- Use the serial_test attribute to run tests serially
+    use std::sync::{Mutex, OnceLock};
 
-    fn with_temp_env_var<F: FnOnce()>(key: &str, value: Option<&str>, test_fn: F) {
-        let old_value = std::env::var(key).ok();
+    // Global lock to serialize environment variable access.
+    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+    /// Returns a reference to a global mutex used to synchronize environment modifications.
+    fn get_env_lock() -> &'static Mutex<()> {
+        ENV_LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    /// A safe wrapper for setting or removing an environment variable.
+    ///
+    /// Although `std::env::set_var` and `std::env::remove_var` are unsafe in Rust 2024,
+    /// this function wraps them inside a controlled environment. The global lock ensures that
+    /// no concurrent access occurs, making our usage safe for tests.
+    fn safe_set_env_var(key: &str, value: Option<&str>) {
         match value {
-            Some(v) => std::env::set_var(key, v),
-            None => std::env::remove_var(key),
+            Some(v) => {
+                // Encapsulate the unsafe call
+                unsafe {
+                    std::env::set_var(key, v);
+                }
+            }
+            None => unsafe {
+                std::env::remove_var(key);
+            },
         }
+    }
+
+    /// Temporarily sets an environment variable, runs the provided closure,
+    /// and then restores the original state.
+    ///
+    /// The global lock (and use of the `serial_test` attribute on tests) guarantees exclusive access
+    /// to environment modifications during the test.
+    fn with_temp_env_var<F: FnOnce()>(key: &str, value: Option<&str>, test_fn: F) {
+        // Acquire the lock to ensure exclusive access to the environment.
+        let _lock = get_env_lock().lock().unwrap();
+        let old_value = std::env::var(key).ok();
+        safe_set_env_var(key, value);
         test_fn();
-        // Restore original
-        match old_value {
-            Some(v) => std::env::set_var(key, v),
-            None => std::env::remove_var(key),
-        }
+        safe_set_env_var(key, old_value.as_deref());
+        // The lock is automatically released here.
+    }
+
+    #[test]
+    #[serial] // Ensures tests that modify the environment run sequentially.
+    fn test_temp_env_var() {
+        with_temp_env_var("MY_TEST_VAR", Some("test_value"), || {
+            assert_eq!(std::env::var("MY_TEST_VAR").unwrap(), "test_value");
+        });
+        // Outside the closure, the environment variable is restored.
     }
 
     #[test]

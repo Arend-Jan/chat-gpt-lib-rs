@@ -9,11 +9,11 @@
 use futures_util::StreamExt; // Brings the `next()` method into scope.
 use std::io::{self, Write};
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::chat::{
-    create_chat_completion_stream, ChatMessage, ChatRole, CreateChatCompletionRequest,
+    ChatMessage, ChatRole, CreateChatCompletionRequest, create_chat_completion_stream,
 };
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {
