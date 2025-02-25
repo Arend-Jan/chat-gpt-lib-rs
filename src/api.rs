@@ -8,15 +8,15 @@
 
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 // Import for streaming support:
 use futures_util::stream::TryStreamExt;
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio_stream::wrappers::LinesStream;
 use tokio_stream::Stream; // Trait for streams.
 use tokio_stream::StreamExt as TokioStreamExt; // Needed for filter_map.
+use tokio_stream::wrappers::LinesStream;
 use tokio_util::io::StreamReader;
 
 /// Sends a POST request with a JSON body to the given `endpoint`.
@@ -197,7 +197,7 @@ where
                     ),
                     err_type: None,
                     code: None,
-                })
+                });
             }
         }
     }

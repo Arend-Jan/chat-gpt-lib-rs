@@ -6,11 +6,11 @@
 //! cargo run --example moderations
 //! ```
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::moderations::{
-    create_moderation, CreateModerationRequest, ModerationsInput,
+    CreateModerationRequest, ModerationsInput, create_moderation,
 };
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {

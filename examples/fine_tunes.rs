@@ -17,12 +17,12 @@
 //! cargo run --example fine_tunes
 //! ```
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::fine_tunes::{
-    cancel_fine_tune, create_fine_tune, delete_fine_tune_model, list_fine_tune_events,
-    list_fine_tunes, retrieve_fine_tune, CreateFineTuneRequest, FineTune,
+    CreateFineTuneRequest, FineTune, cancel_fine_tune, create_fine_tune, delete_fine_tune_model,
+    list_fine_tune_events, list_fine_tunes, retrieve_fine_tune,
 };
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 use std::env;
 
 #[tokio::main]

@@ -5,9 +5,9 @@
 //! cargo run --example models
 //! ```
 
+use chat_gpt_lib_rs::OpenAIClient;
 use chat_gpt_lib_rs::api_resources::models;
 use chat_gpt_lib_rs::error::OpenAIError;
-use chat_gpt_lib_rs::OpenAIClient;
 
 #[tokio::main]
 async fn main() -> Result<(), OpenAIError> {
