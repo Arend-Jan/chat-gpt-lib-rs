@@ -1,5 +1,4 @@
 //! The `api` module contains low-level functions for making HTTP requests to the OpenAI API.
-
 //! It handles authentication headers, organization headers, error parsing, and JSON (de)serialization.
 //!
 //! # Usage
