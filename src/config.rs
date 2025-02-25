@@ -350,22 +350,6 @@ mod tests {
         // Outside the closure, the environment variable is restored.
     }
 
-    /*
-    fn with_temp_env_var<F: FnOnce()>(key: &str, value: Option<&str>, test_fn: F) {
-        let old_value = std::env::var(key).ok();
-        match value {
-            Some(v) => std::env::set_var(key, v),
-            None => std::env::remove_var(key),
-        }
-        test_fn();
-        // Restore original
-        match old_value {
-            Some(v) => std::env::set_var(key, v),
-            None => std::env::remove_var(key),
-        }
-    }
-    */
-
     #[test]
     fn test_new_with_explicit_key() {
         let client = OpenAIClient::new(Some("sk-test-explicit".to_string())).unwrap();
