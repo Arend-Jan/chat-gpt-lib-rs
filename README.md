@@ -3,9 +3,9 @@
 # chat-gpt-lib-rs
 
 A **Rust** client library for the [OpenAI API](https://platform.openai.com/docs/api-reference).  
-Supports multiple OpenAI endpoints, including **Chat**, **Completions**, **Embeddings**, **Models**, **Moderations**, **Files**, **Fine-tunes**, and more ([chat-gpt-lib-rs 0.6.4 - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=A%20,time%20responses)). Built with an **async-first** design using [Tokio](https://tokio.rs/) and [Reqwest](https://crates.io/crates/reqwest), featuring robust error handling and SSE streaming for real-time responses ([chat-gpt-lib-rs 0.6.4 - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=Supports%20multiple%20OpenAI%20endpoints%2C%20including,time%20responses)).
+Supports multiple OpenAI endpoints, including **Chat**, **Completions**, **Embeddings**, **Models**, **Moderations**, **Files**, **Fine-tunes**, and more ([chat-gpt-lib-rs - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=A%20,time%20responses)). Built with an **async-first** design using [Tokio](https://tokio.rs/) and [Reqwest](https://crates.io/crates/reqwest), featuring robust error handling and SSE streaming for real-time responses ([chat-gpt-lib-rs - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=Supports%20multiple%20OpenAI%20endpoints%2C%20including,time%20responses)).
 
-> **Important**: If you’re upgrading from **0.5.x** to **0.6.x**, note that this transition introduces **significant breaking changes**. The project has been extensively refactored, making it too complex for a simple migration guide. You will likely need to update function calls and data structures to align with the new design ([chat-gpt-lib-rs 0.6.4 - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=%3E%20,rs%29%20for%20detailed%20guidance)). Refer to the updated [examples](examples/) folder or the [documentation](https://docs.rs/chat-gpt-lib-rs) for guidance.
+> **Important**: If you’re upgrading from **0.5.x** to **0.6.x**, note that this transition introduces **significant breaking changes**. The project has been extensively refactored, making it too complex for a simple migration guide. You will likely need to update function calls and data structures to align with the new design ([chat-gpt-lib-rs - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=%3E%20,rs%29%20for%20detailed%20guidance)). Refer to the updated [examples](examples/) folder or the [documentation](https://docs.rs/chat-gpt-lib-rs) for guidance.
 
 ## Table of Contents
 
@@ -36,7 +36,7 @@ Supports multiple OpenAI endpoints, including **Chat**, **Completions**, **Embed
   - Embeddings  
   - Moderations  
   - Files (upload, list, download, delete)  
-  - Fine-Tunes (create, list, retrieve, cancel, events, delete models) ([chat-gpt-lib-rs 0.6.4 - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest#:~:text=%2A%20Async,retrieve%2C%20cancel%2C%20events%2C%20delete%20models))  
+  - Fine-Tunes (create, list, retrieve, cancel, events, delete models) ([chat-gpt-lib-rs - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest#:~:text=%2A%20Async,retrieve%2C%20cancel%2C%20events%2C%20delete%20models))  
 - **TLS without OpenSSL** – Uses Rustls for TLS, avoiding system OpenSSL dependencies ([chat-gpt-lib-rs/README.md at main · Arend-Jan/chat-gpt-lib-rs · GitHub](https://github.com/Arend-Jan/chat-gpt-lib-rs/blob/main/README.md#:~:text=,avoids%20system%20dependencies%20like%20OpenSSL)).  
 - **Robust Error Handling** – Custom [`OpenAIError`](https://docs.rs/chat-gpt-lib-rs/latest/chat_gpt_lib_rs/enum.OpenAIError.html) covers HTTP errors, API errors, and JSON deserialization issues.  
 - **Strongly-Typed Requests/Responses** – Serde-powered structs for all request and response bodies.  
