@@ -143,6 +143,10 @@ pub async fn retrieve_model(
 /// expected strings, and all unknown strings map to `Other(String)`.
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum Model {
+    /// The `gpt-4.5-preview` model (owned by system)
+    Gpt45Preview,
+    /// The `gpt-4.5-preview-2025-02-27` model (owned by system)
+    Gpt45Preview2025_02_27,
     /// The `gpt-4o-mini-audio-preview` model (owned by system).
     Gpt4oMiniAudioPreview,
     /// The `gpt-4o-mini-audio-preview-2024-12-17` model (owned by system).
@@ -248,6 +252,8 @@ pub enum Model {
 /// Internal helper to convert a model string into a known variant, or `Other(...)` if unrecognized.
 fn parse_model_str(s: &str) -> Model {
     match s {
+        "gpt-4.5-preview" => Model::Gpt45Preview,
+        "gpt-4.5-preview-2025-02-27" => Model::Gpt45Preview2025_02_27,
         "gpt-4o-mini-audio-preview" => Model::Gpt4oMiniAudioPreview,
         "gpt-4o-mini-audio-preview-2024-12-17" => Model::Gpt4oMiniAudioPreview2024_12_17,
         "gpt-4o-mini-realtime-preview" => Model::Gpt4oMiniRealtimePreview,
@@ -323,6 +329,8 @@ impl Model {
     /// with this [`Model`] variant.
     pub fn as_str(&self) -> &str {
         match self {
+            Model::Gpt45Preview => "gpt-4.5-preview",
+            Model::Gpt45Preview2025_02_27 => "gpt-4.5-preview-2025-02-27",
             Model::Gpt4oMiniAudioPreview => "gpt-4o-mini-audio-preview",
             Model::Gpt4oMiniAudioPreview2024_12_17 => "gpt-4o-mini-audio-preview-2024-12-17",
             Model::Gpt4oMiniRealtimePreview => "gpt-4o-mini-realtime-preview",

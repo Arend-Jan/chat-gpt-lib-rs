@@ -23,7 +23,7 @@ async fn main() -> Result<(), OpenAIError> {
 
     // Build a chat request, including a system message and a user prompt
     let request = CreateChatCompletionRequest {
-        model: Model::Gpt4,
+        model: Model::Gpt45Preview,
         messages: vec![
             ChatMessage {
                 role: ChatRole::System,
