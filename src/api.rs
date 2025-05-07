@@ -260,8 +260,9 @@ mod tests {
     use crate::config::OpenAIClient;
     use crate::error::{OpenAIError, OpenAIError::APIError};
     use serde::Deserialize;
+    use tokio_stream::StreamExt;
     use wiremock::matchers::{method, path};
-    use wiremock::{Mock, MockServer, ResponseTemplate};
+    use wiremock::{Mock, MockServer, ResponseTemplate}; // <-- for `next`, `collect`, etc.
 
     #[derive(Debug, Deserialize)]
     struct MockResponse {
@@ -442,6 +443,138 @@ mod tests {
                 assert!(message.contains("Resource not found"));
             }
             other => panic!("Expected APIError, got {:?}", other),
+        }
+    }
+
+    /* ---------------------------------------------------------------- *\
+     *  post_json_stream – successful Server-Sent Events (SSE) parsing *
+    \* ---------------------------------------------------------------- */
+    #[tokio::test]
+    async fn test_post_json_stream_success() {
+        let mock_server = MockServer::start().await;
+
+        // Simulated event-stream (empty line, "data:" prefix, [DONE] marker)
+        let body = r#"data: {"foo":"first","bar":1}
+data: {"foo":"second","bar":2}
+data: [DONE]
+"#;
+
+        Mock::given(method("POST"))
+            .and(path("/stream-endpoint"))
+            .respond_with(ResponseTemplate::new(200).set_body_raw(body, "text/event-stream"))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        // Any serialisable body works for this test.
+        let req_body = serde_json::json!({ "stream": true });
+
+        let stream = post_json_stream::<serde_json::Value, MockResponse>(
+            &client,
+            "stream-endpoint",
+            &req_body,
+        )
+        .await
+        .expect("stream should start OK");
+
+        // Collect all chunks, unwrapping individual `Result`s.
+        let items: Vec<MockResponse> = stream
+            .map(|r| r.expect("chunk should be Ok"))
+            .collect()
+            .await;
+
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].foo, "first");
+        assert_eq!(items[0].bar, 1);
+        assert_eq!(items[1].foo, "second");
+        assert_eq!(items[1].bar, 2);
+    }
+
+    /* -------------------------------------------------------------- *\
+     * post_json_stream – HTTP error returns an OpenAI APIError     *
+    \* -------------------------------------------------------------- */
+    #[tokio::test]
+    async fn test_post_json_stream_api_error() {
+        let mock_server = MockServer::start().await;
+
+        let error_body = serde_json::json!({
+            "error": {
+                "message": "Streaming not allowed",
+                "type": "invalid_request_error",
+                "code": "not_allowed"
+            }
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/stream-endpoint"))
+            .respond_with(ResponseTemplate::new(403).set_body_json(error_body))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req_body = serde_json::json!({ "stream": true });
+
+        let result = post_json_stream::<serde_json::Value, MockResponse>(
+            &client,
+            "stream-endpoint",
+            &req_body,
+        )
+        .await;
+
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(message.contains("Streaming not allowed"));
+            }
+            Ok(_) => panic!("Expected APIError, got Ok(_)"),
+            Err(other) => panic!("Expected APIError, got {:?}", other.to_string()),
+        }
+    }
+
+    /* ----------------------------------------------------------------- *\
+     * parse_error_response – fallback branch with plain-text body   *
+    \* ----------------------------------------------------------------- */
+
+    #[tokio::test]
+    async fn test_post_json_plain_text_error_fallback() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/plain-error"))
+            .respond_with(
+                ResponseTemplate::new(503).set_body_raw("Service unavailable", "text/plain"),
+            )
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req_body = serde_json::json!({});
+
+        let result: Result<MockResponse, OpenAIError> =
+            post_json(&client, "plain-error", &req_body).await;
+
+        match result {
+            Err(OpenAIError::APIError { message, .. }) => {
+                assert!(
+                    message.contains("Service unavailable"),
+                    "Unexpected message: {message}"
+                );
+            }
+            other => panic!("Expected generic APIError, got {:?}", other),
         }
     }
 }
