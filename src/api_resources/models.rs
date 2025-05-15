@@ -244,6 +244,50 @@ pub enum Model {
     Gpt40613,
     /// The `gpt-4o-mini-2024-07-18` model (owned by system).
     Gpt4oMini2024_07_18,
+    /// The `gpt-4.1-nano` model (owned by system).
+    Gpt41Nano,
+    /// The `gpt-4.1-nano-2025-04-14` model (owned by system).
+    Gpt41Nano2025_04_14,
+    /// The `gpt-4.1-mini` model (owned by system).
+    Gpt41Mini,
+    /// The `gpt-4.1-mini-2025-04-14` model (owned by system).
+    Gpt41Mini2025_04_14,
+    /// The `gpt-4.1` model (owned by system).
+    Gpt41,
+    /// The `gpt-4.1-2025-04-14` model (owned by system).
+    Gpt41_2025_04_14,
+    /// The `gpt-4o-mini-search-preview` model (owned by system).
+    Gpt4oMiniSearchPreview,
+    /// The `gpt-4o-mini-search-preview-2025-03-11` model (owned by system).
+    Gpt4oMiniSearchPreview2025_03_11,
+    /// The `gpt-4o-search-preview` model (owned by system).
+    Gpt4oSearchPreview,
+    /// The `gpt-4o-search-preview-2025-03-11` model (owned by system).
+    Gpt4oSearchPreview2025_03_11,
+    /// The `gpt-4o-mini-tts` model (owned by system).
+    Gpt4oMiniTts,
+    /// The `gpt-4o-mini-transcribe` model (owned by system).
+    Gpt4oMiniTranscribe,
+    /// The `gpt-4o-transcribe` model (owned by system).
+    Gpt4oTranscribe,
+    /// The `gpt-image-1` model (owned by system).
+    GptImage1,
+    /// The `o1-2024-12-17` model (owned by system).
+    O12024_12_17,
+    /// The `o1` model (owned by system).
+    O1,
+    /// The `o1-pro` model (owned by system).
+    O1Pro,
+    /// The `o1-pro-2025-03-19` model (owned by system).
+    O1Pro2025_03_19,
+    /// The `o3-mini` model (owned by system).
+    O3Mini,
+    /// The `o3-mini-2025-01-31` model (owned by system).
+    O3Mini2025_01_31,
+    /// The `o4-mini` model (owned by system).
+    O4Mini,
+    /// The `o4-mini-2025-04-16` model (owned by system).
+    O4Mini2025_04_16,
 
     /// A catch-all for unknown or future model names.
     Other(String),
@@ -302,6 +346,28 @@ fn parse_model_str(s: &str) -> Model {
         "gpt-4o-mini" => Model::Gpt4oMini,
         "gpt-4-0613" => Model::Gpt40613,
         "gpt-4o-mini-2024-07-18" => Model::Gpt4oMini2024_07_18,
+        "gpt-4.1-nano" => Model::Gpt41Nano,
+        "gpt-4.1-nano-2025-04-14" => Model::Gpt41Nano2025_04_14,
+        "gpt-4.1-mini" => Model::Gpt41Mini,
+        "gpt-4.1-mini-2025-04-14" => Model::Gpt41Mini2025_04_14,
+        "gpt-4.1" => Model::Gpt41,
+        "gpt-4.1-2025-04-14" => Model::Gpt41_2025_04_14,
+        "gpt-4o-mini-search-preview" => Model::Gpt4oMiniSearchPreview,
+        "gpt-4o-mini-search-preview-2025-03-11" => Model::Gpt4oMiniSearchPreview2025_03_11,
+        "gpt-4o-search-preview" => Model::Gpt4oSearchPreview,
+        "gpt-4o-search-preview-2025-03-11" => Model::Gpt4oSearchPreview2025_03_11,
+        "gpt-4o-mini-tts" => Model::Gpt4oMiniTts,
+        "gpt-4o-mini-transcribe" => Model::Gpt4oMiniTranscribe,
+        "gpt-4o-transcribe" => Model::Gpt4oTranscribe,
+        "gpt-image-1" => Model::GptImage1,
+        "o1-2024-12-17" => Model::O12024_12_17,
+        "o1" => Model::O1,
+        "o1-pro" => Model::O1Pro,
+        "o1-pro-2025-03-19" => Model::O1Pro2025_03_19,
+        "o3-mini" => Model::O3Mini,
+        "o3-mini-2025-01-31" => Model::O3Mini2025_01_31,
+        "o4-mini" => Model::O4Mini,
+        "o4-mini-2025-04-16" => Model::O4Mini2025_04_16,
         _ => Model::Other(s.to_owned()),
     }
 }
@@ -379,6 +445,28 @@ impl Model {
             Model::Gpt4oMini => "gpt-4o-mini",
             Model::Gpt40613 => "gpt-4-0613",
             Model::Gpt4oMini2024_07_18 => "gpt-4o-mini-2024-07-18",
+            Model::Gpt41Nano => "gpt-4.1-nano",
+            Model::Gpt41Nano2025_04_14 => "gpt-4.1-nano-2025-04-14",
+            Model::Gpt41Mini => "gpt-4.1-mini",
+            Model::Gpt41Mini2025_04_14 => "gpt-4.1-mini-2025-04-14",
+            Model::Gpt41 => "gpt-4.1",
+            Model::Gpt41_2025_04_14 => "gpt-4.1-2025-04-14",
+            Model::Gpt4oMiniSearchPreview => "gpt-4o-mini-search-preview",
+            Model::Gpt4oMiniSearchPreview2025_03_11 => "gpt-4o-mini-search-preview-2025-03-11",
+            Model::Gpt4oSearchPreview => "gpt-4o-search-preview",
+            Model::Gpt4oSearchPreview2025_03_11 => "gpt-4o-search-preview-2025-03-11",
+            Model::Gpt4oMiniTts => "gpt-4o-mini-tts",
+            Model::Gpt4oMiniTranscribe => "gpt-4o-mini-transcribe",
+            Model::Gpt4oTranscribe => "gpt-4o-transcribe",
+            Model::GptImage1 => "gpt-image-1",
+            Model::O12024_12_17 => "o1-2024-12-17",
+            Model::O1 => "o1",
+            Model::O1Pro => "o1-pro",
+            Model::O1Pro2025_03_19 => "o1-pro-2025-03-19",
+            Model::O3Mini => "o3-mini",
+            Model::O3Mini2025_01_31 => "o3-mini-2025-01-31",
+            Model::O4Mini => "o4-mini",
+            Model::O4Mini2025_04_16 => "o4-mini-2025-04-16",
             Model::Other(s) => s.as_str(),
         }
     }
@@ -584,5 +672,109 @@ mod tests {
             }
             other => panic!("Expected APIError, got {:?}", other),
         }
+    }
+
+    #[test]
+    fn test_model_round_trip() {
+        // First, build a list of all known (non-Other) variants.
+        // NOTE: This is somewhat verbose, but it ensures we test
+        // every variant in your enum for exact round-trip correctness.
+        let all_known_variants = vec![
+            Model::Gpt45Preview,
+            Model::Gpt45Preview2025_02_27,
+            Model::Gpt4oMiniAudioPreview,
+            Model::Gpt4oMiniAudioPreview2024_12_17,
+            Model::Gpt4oMiniRealtimePreview,
+            Model::DallE2,
+            Model::Gpt4o2024_11_20,
+            Model::O1Mini2024_09_12,
+            Model::O1Preview2024_09_12,
+            Model::O1Mini,
+            Model::O1Preview,
+            Model::ChatGpt4oLatest,
+            Model::Whisper1,
+            Model::DallE3,
+            Model::Gpt4Turbo,
+            Model::Gpt4TurboPreview,
+            Model::Gpt4oAudioPreview,
+            Model::Gpt4oAudioPreview2024_10_01,
+            Model::Babbage002,
+            Model::OmniModerationLatest,
+            Model::OmniModeration2024_09_26,
+            Model::Tts1Hd1106,
+            Model::Gpt4o2024_08_06,
+            Model::Gpt4o,
+            Model::Gpt4o2024_05_13,
+            Model::Tts1Hd,
+            Model::Gpt4Turbo2024_04_09,
+            Model::Tts1,
+            Model::Gpt3_5Turbo16k,
+            Model::Tts1_1106,
+            Model::Davinci002,
+            Model::Gpt3_5Turbo1106,
+            Model::Gpt4oMiniRealtimePreview2024_12_17,
+            Model::Gpt3_5TurboInstruct,
+            Model::Gpt4oRealtimePreview2024_10_01,
+            Model::Gpt3_5TurboInstruct0914,
+            Model::Gpt3_5Turbo0125,
+            Model::Gpt4oAudioPreview2024_12_17,
+            Model::Gpt4oRealtimePreview2024_12_17,
+            Model::Gpt3_5Turbo,
+            Model::TextEmbedding3Large,
+            Model::Gpt4oRealtimePreview,
+            Model::TextEmbedding3Small,
+            Model::Gpt40125Preview,
+            Model::Gpt4,
+            Model::TextEmbeddingAda002,
+            Model::Gpt40106Preview,
+            Model::Gpt4oMini,
+            Model::Gpt40613,
+            Model::Gpt4oMini2024_07_18,
+            Model::Gpt41Nano,
+            Model::Gpt41Nano2025_04_14,
+            Model::Gpt41Mini,
+            Model::Gpt41Mini2025_04_14,
+            Model::Gpt41,
+            Model::Gpt41_2025_04_14,
+            Model::Gpt4oMiniSearchPreview,
+            Model::Gpt4oMiniSearchPreview2025_03_11,
+            Model::Gpt4oSearchPreview,
+            Model::Gpt4oSearchPreview2025_03_11,
+            Model::Gpt4oMiniTts,
+            Model::Gpt4oMiniTranscribe,
+            Model::Gpt4oTranscribe,
+            Model::GptImage1,
+            Model::O12024_12_17,
+            Model::O1,
+            Model::O1Pro,
+            Model::O1Pro2025_03_19,
+            Model::O3Mini,
+            Model::O3Mini2025_01_31,
+            Model::O4Mini,
+            Model::O4Mini2025_04_16,
+        ];
+
+        // Round trip check for each known variant
+        for variant in &all_known_variants {
+            let string_id = variant.as_str();
+            let parsed_variant = Model::from(string_id);
+            assert_eq!(
+                *variant, parsed_variant,
+                "Expected round trip to yield {:?}, but got {:?}",
+                variant, parsed_variant
+            );
+        }
+
+        // Optional: Test a custom/unknown model string to ensure
+        // it ends up in Model::Other(String) and also round-trips properly.
+        let unknown_str = "my-awesome-custom-model";
+        let other_variant = Model::Other(unknown_str.to_string());
+        // as_str => "my-awesome-custom-model"
+        let from_str = Model::from(other_variant.as_str());
+        // Should remain an Other variant with the same string.
+        assert_eq!(
+            other_variant, from_str,
+            "Custom model string did not properly round-trip."
+        );
     }
 }
