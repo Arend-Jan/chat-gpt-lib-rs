@@ -673,4 +673,108 @@ mod tests {
             other => panic!("Expected APIError, got {:?}", other),
         }
     }
+
+    #[test]
+    fn test_model_round_trip() {
+        // First, build a list of all known (non-Other) variants.
+        // NOTE: This is somewhat verbose, but it ensures we test
+        // every variant in your enum for exact round-trip correctness.
+        let all_known_variants = vec![
+            Model::Gpt45Preview,
+            Model::Gpt45Preview2025_02_27,
+            Model::Gpt4oMiniAudioPreview,
+            Model::Gpt4oMiniAudioPreview2024_12_17,
+            Model::Gpt4oMiniRealtimePreview,
+            Model::DallE2,
+            Model::Gpt4o2024_11_20,
+            Model::O1Mini2024_09_12,
+            Model::O1Preview2024_09_12,
+            Model::O1Mini,
+            Model::O1Preview,
+            Model::ChatGpt4oLatest,
+            Model::Whisper1,
+            Model::DallE3,
+            Model::Gpt4Turbo,
+            Model::Gpt4TurboPreview,
+            Model::Gpt4oAudioPreview,
+            Model::Gpt4oAudioPreview2024_10_01,
+            Model::Babbage002,
+            Model::OmniModerationLatest,
+            Model::OmniModeration2024_09_26,
+            Model::Tts1Hd1106,
+            Model::Gpt4o2024_08_06,
+            Model::Gpt4o,
+            Model::Gpt4o2024_05_13,
+            Model::Tts1Hd,
+            Model::Gpt4Turbo2024_04_09,
+            Model::Tts1,
+            Model::Gpt3_5Turbo16k,
+            Model::Tts1_1106,
+            Model::Davinci002,
+            Model::Gpt3_5Turbo1106,
+            Model::Gpt4oMiniRealtimePreview2024_12_17,
+            Model::Gpt3_5TurboInstruct,
+            Model::Gpt4oRealtimePreview2024_10_01,
+            Model::Gpt3_5TurboInstruct0914,
+            Model::Gpt3_5Turbo0125,
+            Model::Gpt4oAudioPreview2024_12_17,
+            Model::Gpt4oRealtimePreview2024_12_17,
+            Model::Gpt3_5Turbo,
+            Model::TextEmbedding3Large,
+            Model::Gpt4oRealtimePreview,
+            Model::TextEmbedding3Small,
+            Model::Gpt40125Preview,
+            Model::Gpt4,
+            Model::TextEmbeddingAda002,
+            Model::Gpt40106Preview,
+            Model::Gpt4oMini,
+            Model::Gpt40613,
+            Model::Gpt4oMini2024_07_18,
+            Model::Gpt41Nano,
+            Model::Gpt41Nano2025_04_14,
+            Model::Gpt41Mini,
+            Model::Gpt41Mini2025_04_14,
+            Model::Gpt41,
+            Model::Gpt41_2025_04_14,
+            Model::Gpt4oMiniSearchPreview,
+            Model::Gpt4oMiniSearchPreview2025_03_11,
+            Model::Gpt4oSearchPreview,
+            Model::Gpt4oSearchPreview2025_03_11,
+            Model::Gpt4oMiniTts,
+            Model::Gpt4oMiniTranscribe,
+            Model::Gpt4oTranscribe,
+            Model::GptImage1,
+            Model::O12024_12_17,
+            Model::O1,
+            Model::O1Pro,
+            Model::O1Pro2025_03_19,
+            Model::O3Mini,
+            Model::O3Mini2025_01_31,
+            Model::O4Mini,
+            Model::O4Mini2025_04_16,
+        ];
+
+        // Round trip check for each known variant
+        for variant in &all_known_variants {
+            let string_id = variant.as_str();
+            let parsed_variant = Model::from(string_id);
+            assert_eq!(
+                *variant, parsed_variant,
+                "Expected round trip to yield {:?}, but got {:?}",
+                variant, parsed_variant
+            );
+        }
+
+        // Optional: Test a custom/unknown model string to ensure
+        // it ends up in Model::Other(String) and also round-trips properly.
+        let unknown_str = "my-awesome-custom-model";
+        let other_variant = Model::Other(unknown_str.to_string());
+        // as_str => "my-awesome-custom-model"
+        let from_str = Model::from(other_variant.as_str());
+        // Should remain an Other variant with the same string.
+        assert_eq!(
+            other_variant, from_str,
+            "Custom model string did not properly round-trip."
+        );
+    }
 }
