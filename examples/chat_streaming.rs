@@ -25,7 +25,7 @@ async fn main() -> Result<(), OpenAIError> {
 
     // Build a chat request. Note that we enable streaming by setting `stream: Some(true)`.
     let request = CreateChatCompletionRequest {
-        model: "gpt-3.5-turbo".into(),
+        model: "gpt-4o-mini".into(),
         messages: vec![
             ChatMessage {
                 role: ChatRole::System,
@@ -59,14 +59,14 @@ async fn main() -> Result<(), OpenAIError> {
             Ok(chunk) => {
                 // For streaming chat responses, the partial update is contained in the delta field.
                 // Check the first choice for a delta update.
-                if let Some(choice) = chunk.choices.first() {
-                    if let Some(content) = &choice.delta.content {
-                        // Print the partial text without adding a newline.
-                        print!("{}", content);
-                        // Flush stdout immediately so the text appears incrementally.
-                        io::stdout().flush().unwrap();
-                        full_response.push_str(content);
-                    }
+                if let Some(choice) = chunk.choices.first()
+                    && let Some(content) = &choice.delta.content
+                {
+                    // Print the partial text without adding a newline.
+                    print!("{}", content);
+                    // Flush stdout immediately so the text appears incrementally.
+                    io::stdout().flush().unwrap();
+                    full_response.push_str(content);
                 }
             }
             Err(e) => {

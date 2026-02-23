@@ -138,13 +138,11 @@ mod tests {
     use super::*;
     use std::fmt::Write as _;
 
-    /// Produces a `reqwest::Error` by making a **blocking** request to an invalid URL.
-    /// This requires `reqwest` with the `"blocking"` feature enabled.
+    /// Produces a `reqwest::Error` using an invalid URL.
     fn produce_reqwest_error() -> reqwest::Error {
-        // Attempting to make a request to a non-routable domain or an invalid protocol
-        reqwest::blocking::Client::new()
-            .get("http://this-domain-should-not-exist9999.test")
-            .send()
+        reqwest::Client::new()
+            .get("not a valid url")
+            .build()
             .unwrap_err()
     }
 
@@ -195,13 +193,12 @@ mod tests {
         match &err {
             OpenAIError::HTTPError(e) => {
                 let e_str = format!("{}", e);
-                // Accept multiple possible error messages
+                let lower = e_str.to_lowercase();
                 assert!(
-                    e_str.contains("error sending request")
-                        || e_str.contains("dns error")
-                        || e_str.contains("Could not resolve host")
-                        || e_str.contains("Name or service not known"),
-                    "Expected mention of DNS/resolve error or sending request, got: {}",
+                    lower.contains("builder error")
+                        || lower.contains("invalid url")
+                        || lower.contains("relative url without a base"),
+                    "Expected URL parse/builder error, got: {}",
                     e_str
                 );
             }

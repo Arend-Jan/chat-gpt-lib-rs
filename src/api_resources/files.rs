@@ -41,6 +41,7 @@ use std::path::Path;
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 
+use crate::api::{delete_json, get_bytes, get_json, post_multipart};
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
 
@@ -135,7 +136,6 @@ pub async fn upload_file(
     purpose: UploadFilePurpose,
 ) -> Result<FileObject, OpenAIError> {
     let endpoint = "files";
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
 
     // Prepare the multipart form
     let file_bytes = tokio::fs::read(file_path)
@@ -159,16 +159,7 @@ pub async fn upload_file(
         .part("file", file_part)
         .text("purpose", purpose.to_string());
 
-    // Send the request
-    let response = client
-        .http_client
-        .post(&url)
-        .bearer_auth(client.api_key())
-        .multipart(form)
-        .send()
-        .await?;
-
-    handle_file_response(response).await
+    post_multipart(client, endpoint, form).await
 }
 
 /// Lists all files stored in your OpenAI account.
@@ -180,22 +171,8 @@ pub async fn upload_file(
 /// Returns [`OpenAIError`] if the request fails or the API returns an error.
 pub async fn list_files(client: &OpenAIClient) -> Result<FileListResponse, OpenAIError> {
     let endpoint = "files";
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
 
-    let response = client
-        .http_client
-        .get(&url)
-        .bearer_auth(client.api_key())
-        .send()
-        .await?;
-
-    let status = response.status();
-    if status.is_success() {
-        let files = response.json::<FileListResponse>().await?;
-        Ok(files)
-    } else {
-        crate::api::parse_error_response(response).await
-    }
+    get_json(client, endpoint).await
 }
 
 /// Retrieves metadata about a specific file by its ID.
@@ -210,16 +187,7 @@ pub async fn retrieve_file_metadata(
     file_id: &str,
 ) -> Result<FileObject, OpenAIError> {
     let endpoint = format!("files/{}", file_id);
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
-
-    let response = client
-        .http_client
-        .get(&url)
-        .bearer_auth(client.api_key())
-        .send()
-        .await?;
-
-    handle_file_response(response).await
+    get_json(client, &endpoint).await
 }
 
 /// Downloads the content of a file by its ID.
@@ -239,21 +207,8 @@ pub async fn retrieve_file_content(
     // The official docs:
     // GET /v1/files/{file_id}/content
     let endpoint = format!("files/{}/content", file_id);
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
 
-    let response = client
-        .http_client
-        .get(&url)
-        .bearer_auth(client.api_key())
-        .send()
-        .await?;
-
-    if response.status().is_success() {
-        let bytes = response.bytes().await?;
-        Ok(bytes.to_vec())
-    } else {
-        crate::api::parse_error_response(response).await
-    }
+    get_bytes(client, &endpoint).await
 }
 
 /// Deletes a file by its ID.
@@ -269,33 +224,8 @@ pub async fn delete_file(
     file_id: &str,
 ) -> Result<DeleteFileResponse, OpenAIError> {
     let endpoint = format!("files/{}", file_id);
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
 
-    let response = client
-        .http_client
-        .delete(&url)
-        .bearer_auth(client.api_key())
-        .send()
-        .await?;
-
-    let status = response.status();
-    if status.is_success() {
-        let res_body = response.json::<DeleteFileResponse>().await?;
-        Ok(res_body)
-    } else {
-        crate::api::parse_error_response(response).await
-    }
-}
-
-/// Helper to handle responses that should yield a [`FileObject`].
-async fn handle_file_response(response: reqwest::Response) -> Result<FileObject, OpenAIError> {
-    let status = response.status();
-    if status.is_success() {
-        let file_obj = response.json::<FileObject>().await?;
-        Ok(file_obj)
-    } else {
-        crate::api::parse_error_response(response).await
-    }
+    delete_json(client, &endpoint).await
 }
 
 #[cfg(test)]

@@ -104,8 +104,8 @@ async fn main() -> Result<(), OpenAIError> {
 async fn process_user_input(
     client: &OpenAIClient,
     messages: &mut Vec<ChatMessage>,
-    user_message_content: &String,
-    model: &String,
+    user_message_content: &str,
+    model: &str,
     max_tokens: Option<u32>,
     temperature: Option<f64>,
 ) -> Result<(), OpenAIError> {
@@ -138,7 +138,7 @@ async fn process_user_input(
     let chat = {
         spinner.enable_steady_tick(Duration::from_millis(100));
         //let result = client.create(input).await;
-        let result = create_chat_completion(&client, &request).await?;
+        let result = create_chat_completion(client, &request).await?;
         spinner.finish_and_clear();
         result
     };

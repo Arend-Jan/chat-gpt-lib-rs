@@ -5,14 +5,15 @@
 A **Rust** client library for the [OpenAI API](https://platform.openai.com/docs/api-reference).  
 Supports multiple OpenAI endpoints, including **Chat**, **Completions**, **Embeddings**, **Models**, **Moderations**, **Files**, **Fine-tunes**, and more ([chat-gpt-lib-rs - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=A%20,time%20responses)). Built with an **async-first** design using [Tokio](https://tokio.rs/) and [Reqwest](https://crates.io/crates/reqwest), featuring robust error handling and SSE streaming for real-time responses ([chat-gpt-lib-rs - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=Supports%20multiple%20OpenAI%20endpoints%2C%20including,time%20responses)).
 
-> **Important**: If you’re upgrading from **0.5.x** to **0.6.x**, note that this transition introduces **significant breaking changes**. The project has been extensively refactored, making it too complex for a simple migration guide. You will likely need to update function calls and data structures to align with the new design ([chat-gpt-lib-rs - Docs.rs](https://docs.rs/crate/chat-gpt-lib-rs/latest/source/README.md#:~:text=%3E%20,rs%29%20for%20detailed%20guidance)). Refer to the updated [examples](examples/) folder or the [documentation](https://docs.rs/chat-gpt-lib-rs) for guidance.
+> **Important**: If you’re upgrading from **0.6.x** to **0.7.x**, this release includes breaking changes to the `Model` enum (expanded and refreshed aliases/snapshots, plus `#[non_exhaustive]`). If your code exhaustively matches on `Model`, add a fallback arm (or use `Model::Other`) and review examples/docs for updated model IDs.
 
 ## Table of Contents
 
 1. [Features](#features)  
-2. [Installation](#installation)  
-3. [Quick Start](#quick-start)  
-4. [API Highlights](#api-highlights)  
+2. [Migration Guide (0.6.x -> 0.7.x)](#migration-guide-06x---07x)  
+3. [Installation](#installation)  
+4. [Quick Start](#quick-start)  
+5. [API Highlights](#api-highlights)  
    - [Models](#models)  
    - [Completions](#completions)  
    - [Chat Completions](#chat-completions)  
@@ -20,11 +21,39 @@ Supports multiple OpenAI endpoints, including **Chat**, **Completions**, **Embed
    - [Moderations](#moderations)  
    - [Files](#files)  
    - [Fine-Tunes](#fine-tunes)  
-5. [Environment Variables & Configuration](#environment-variables--configuration)  
-6. [Streaming (SSE)](#streaming-sse)  
-7. [Example Projects](#example-projects)  
-8. [Contributing](#contributing)  
-9. [License](#license)  
+6. [Environment Variables & Configuration](#environment-variables--configuration)  
+7. [Streaming (SSE)](#streaming-sse)  
+8. [Example Projects](#example-projects)  
+9. [Contributing](#contributing)  
+10. [License](#license)  
+
+## Migration Guide (0.6.x -> 0.7.x)
+
+The 0.7.x release refreshes the typed model catalog and introduces a few behavior changes.
+
+- `Model` is now `#[non_exhaustive]`.
+  If you pattern-match on `Model`, add a fallback arm:
+
+```rust
+match model {
+    chat_gpt_lib_rs::api_resources::models::Model::Gpt4oMini => { /* ... */ }
+    // ...other variants you care about...
+    _ => { /* fallback for future variants */ }
+}
+```
+
+- The model list is now docs-curated and includes modern aliases plus preview/date-pinned snapshots.
+  Some legacy variants from 0.6.x are intentionally removed (for example old instruct and old GPT-4 snapshot IDs).
+
+- Prefer newer IDs in code/examples:
+  - Chat: `gpt-4o-mini` (or newer GPT-5 family models)
+  - Completions: `gpt-3.5-turbo`
+  - Embeddings: `text-embedding-3-small` or `text-embedding-3-large`
+  - Moderation: `omni-moderation-latest`
+
+- Unknown model IDs still work through `Model::Other(String)`.
+
+- Streaming deserialization behavior changed: malformed chunks are now surfaced as stream `Err(...)` items instead of being silently skipped.
 
 ## Features
 
@@ -75,7 +104,7 @@ async fn main() -> Result<(), OpenAIError> {
 
     // Prepare a request to generate a text completion.
     let request = CreateCompletionRequest {
-        model: "text-davinci-003".to_string(),
+        model: "gpt-3.5-turbo".to_string(),
         prompt: Some("Write a short advertisement for ice cream.".into()),
         max_tokens: Some(50),
         temperature: Some(0.7),
@@ -100,10 +129,10 @@ Below are examples of how to use various API endpoints. All calls require an `Op
 use chat_gpt_lib_rs::api_resources::models;
 // List available models:
 let all_models = models::list_models(&client).await?;
-println!("Available Models: {:?}", all_models.data);
+println!("Available Models: {:?}", all_models);
 
 // Retrieve details for a specific model:
-let model_details = models::retrieve_model(&client, "text-davinci-003").await?;
+let model_details = models::retrieve_model(&client, "gpt-4o-mini").await?;
 println!("Model details: {:?}", model_details);
 ```
 
@@ -115,7 +144,7 @@ use chat_gpt_lib_rs::api_resources::completions::{
 };
 
 let req = CreateCompletionRequest {
-    model: "text-davinci-003".to_string(),
+    model: "gpt-3.5-turbo".to_string(),
     prompt: Some("Hello, world!".into()),
     max_tokens: Some(50),
     ..Default::default()
@@ -133,7 +162,7 @@ use chat_gpt_lib_rs::api_resources::chat::{
 };
 
 let chat_req = CreateChatCompletionRequest {
-    model: "gpt-3.5-turbo".into(),
+    model: "gpt-4o-mini".into(),
     messages: vec![
         ChatMessage {
             role: ChatRole::System,
@@ -162,7 +191,7 @@ use chat_gpt_lib_rs::api_resources::embeddings::{
 };
 
 let emb_req = CreateEmbeddingsRequest {
-    model: "text-embedding-ada-002".to_string(),
+    model: "text-embedding-3-small".to_string(),
     input: EmbeddingsInput::String("Hello world!".to_string()),
     user: None,
 };
@@ -290,7 +319,7 @@ use chat_gpt_lib_rs::{OpenAIClient, OpenAIError};
 async fn main() -> Result<(), OpenAIError> {
     let client = OpenAIClient::new(None)?;
     let request = CreateChatCompletionRequest {
-        model: "gpt-3.5-turbo".into(),
+        model: "gpt-4o-mini".into(),
         messages: vec![
             ChatMessage { role: ChatRole::System, content: "You are a helpful assistant.".into(), name: None },
             ChatMessage { role: ChatRole::User, content: "Tell me a joke.".into(), name: None },
@@ -338,7 +367,7 @@ Contributions and feedback are welcome! To get started:
 4. Run tests to ensure nothing is broken (`cargo test`).  
 5. Open a pull request describing your changes.
 
-Given that the 0.6.x release was a major refactor, much of the code has changed from earlier versions. If you are updating older code, please refer to the new examples and documentation for the updated usage patterns ([chat-gpt-lib-rs/README.md at main · Arend-Jan/chat-gpt-lib-rs · GitHub](https://github.com/Arend-Jan/chat-gpt-lib-rs/blob/main/README.md#:~:text=4,describing%20the%20changes)). This will help in understanding how to migrate to the latest API.
+Given that the 0.7.x release refreshes model identifiers and expands typed model coverage, some usage patterns changed from earlier versions. If you are updating older code, refer to the latest examples and docs for current model IDs and migration guidance.
 
 ## License
 

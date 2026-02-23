@@ -8,6 +8,7 @@
 
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
+use reqwest::Method;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
@@ -18,6 +19,32 @@ use tokio_stream::Stream; // Trait for streams.
 use tokio_stream::StreamExt as TokioStreamExt; // Needed for filter_map.
 use tokio_stream::wrappers::LinesStream;
 use tokio_util::io::StreamReader;
+
+fn endpoint_url(client: &OpenAIClient, endpoint: &str) -> String {
+    format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint)
+}
+
+fn with_common_headers(
+    client: &OpenAIClient,
+    request_builder: reqwest::RequestBuilder,
+) -> reqwest::RequestBuilder {
+    let mut request_builder = request_builder.bearer_auth(client.api_key());
+
+    if let Some(org_id) = client.organization() {
+        request_builder = request_builder.header("OpenAI-Organization", org_id);
+    }
+
+    request_builder
+}
+
+fn request_builder(
+    client: &OpenAIClient,
+    method: Method,
+    endpoint: &str,
+) -> reqwest::RequestBuilder {
+    let url = endpoint_url(client, endpoint);
+    with_common_headers(client, client.http_client.request(method, url))
+}
 
 /// Sends a POST request with a JSON body to the given `endpoint`.
 ///
@@ -46,15 +73,10 @@ where
     T: Serialize,
     R: DeserializeOwned,
 {
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
-    let mut request_builder = client.http_client.post(&url).bearer_auth(client.api_key());
-
-    // If an organization ID is configured, include that in the request headers.
-    if let Some(org_id) = client.organization() {
-        request_builder = request_builder.header("OpenAI-Organization", org_id);
-    }
-
-    let response = request_builder.json(body).send().await?;
+    let response = request_builder(client, Method::POST, endpoint)
+        .json(body)
+        .send()
+        .await?;
 
     handle_response(response).await
 }
@@ -80,15 +102,53 @@ pub(crate) async fn get_json<R>(client: &OpenAIClient, endpoint: &str) -> Result
 where
     R: DeserializeOwned,
 {
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
-    let mut request_builder = client.http_client.get(&url).bearer_auth(client.api_key());
+    let response = request_builder(client, Method::GET, endpoint)
+        .send()
+        .await?;
 
-    // If an organization ID is configured, include that in the request headers.
-    if let Some(org_id) = client.organization() {
-        request_builder = request_builder.header("OpenAI-Organization", org_id);
+    handle_response(response).await
+}
+
+/// Sends a DELETE request to the given `endpoint` and deserializes a successful JSON response.
+pub(crate) async fn delete_json<R>(client: &OpenAIClient, endpoint: &str) -> Result<R, OpenAIError>
+where
+    R: DeserializeOwned,
+{
+    let response = request_builder(client, Method::DELETE, endpoint)
+        .send()
+        .await?;
+    handle_response(response).await
+}
+
+/// Sends a GET request to the given `endpoint` and returns the raw body as bytes.
+pub(crate) async fn get_bytes(
+    client: &OpenAIClient,
+    endpoint: &str,
+) -> Result<Vec<u8>, OpenAIError> {
+    let response = request_builder(client, Method::GET, endpoint)
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        Ok(response.bytes().await?.to_vec())
+    } else {
+        parse_error_response(response).await
     }
+}
 
-    let response = request_builder.send().await?;
+/// Sends a POST request with multipart form data to the given `endpoint`.
+pub(crate) async fn post_multipart<R>(
+    client: &OpenAIClient,
+    endpoint: &str,
+    form: reqwest::multipart::Form,
+) -> Result<R, OpenAIError>
+where
+    R: DeserializeOwned,
+{
+    let response = request_builder(client, Method::POST, endpoint)
+        .multipart(form)
+        .send()
+        .await?;
 
     handle_response(response).await
 }
@@ -151,7 +211,7 @@ pub async fn parse_error_response<R>(response: reqwest::Response) -> Result<R, O
 ///
 /// # Parameters
 ///
-/// - `client`: The [`OpenAIClient`](crate::config::OpenAIClient) holding base URL, API key, etc.
+/// - `client`: The [`OpenAIClient`] holding base URL, API key, etc.
 /// - `endpoint`: The relative endpoint (e.g., `"chat/completions"`) appended to the base URL.
 /// - `body`: A serializable request body.
 ///
@@ -175,14 +235,10 @@ where
     T: Serialize,
     R: DeserializeOwned + 'static,
 {
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
-    let mut request_builder = client.http_client.post(&url).bearer_auth(client.api_key());
-
-    if let Some(org_id) = client.organization() {
-        request_builder = request_builder.header("OpenAI-Organization", org_id);
-    }
-
-    let response = request_builder.json(body).send().await?;
+    let response = request_builder(client, Method::POST, endpoint)
+        .json(body)
+        .send()
+        .await?;
 
     let status = response.status();
     if !status.is_success() {
@@ -203,9 +259,7 @@ where
     }
 
     // Convert the response's byte stream into an async reader.
-    let byte_stream = response
-        .bytes_stream()
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e));
+    let byte_stream = response.bytes_stream().map_err(std::io::Error::other);
     let stream_reader = StreamReader::new(byte_stream);
     let buf_reader = BufReader::new(stream_reader);
 
@@ -233,13 +287,7 @@ where
                     // Attempt to deserialize the JSON.
                     match serde_json::from_str::<R>(data) {
                         Ok(parsed) => Some(Ok(parsed)),
-                        Err(e) => {
-                            eprintln!(
-                                "Warning: failed to deserialize chunk: {:?} (error: {})",
-                                data, e
-                            );
-                            None // Skip this chunk on deserialization error.
-                        }
+                        Err(e) => Some(Err(OpenAIError::from(e))),
                     }
                 }
             }
@@ -493,6 +541,53 @@ data: [DONE]
         assert_eq!(items[0].bar, 1);
         assert_eq!(items[1].foo, "second");
         assert_eq!(items[1].bar, 2);
+    }
+
+    #[tokio::test]
+    async fn test_post_json_stream_emits_deserialize_error_chunk() {
+        let mock_server = MockServer::start().await;
+
+        let body = r#"data: {"foo":"first","bar":1}
+data: {"foo":"oops","bar":"not-a-number"}
+data: {"foo":"second","bar":2}
+data: [DONE]
+"#;
+
+        Mock::given(method("POST"))
+            .and(path("/stream-endpoint"))
+            .respond_with(ResponseTemplate::new(200).set_body_raw(body, "text/event-stream"))
+            .mount(&mock_server)
+            .await;
+
+        let client = OpenAIClient::builder()
+            .with_api_key("test-key")
+            .with_base_url(&mock_server.uri())
+            .build()
+            .unwrap();
+
+        let req_body = serde_json::json!({ "stream": true });
+
+        let mut stream = post_json_stream::<serde_json::Value, MockResponse>(
+            &client,
+            "stream-endpoint",
+            &req_body,
+        )
+        .await
+        .expect("stream should start OK");
+
+        let mut ok_chunks = Vec::new();
+        let mut saw_deserialize_error = false;
+
+        while let Some(item) = stream.next().await {
+            match item {
+                Ok(chunk) => ok_chunks.push(chunk.foo),
+                Err(OpenAIError::DeserializeError(_)) => saw_deserialize_error = true,
+                Err(other) => panic!("Expected deserialize error, got {other:?}"),
+            }
+        }
+
+        assert_eq!(ok_chunks, vec!["first".to_string(), "second".to_string()]);
+        assert!(saw_deserialize_error);
     }
 
     /* -------------------------------------------------------------- *\

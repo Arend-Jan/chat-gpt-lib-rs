@@ -20,7 +20,7 @@ async fn main() -> Result<(), OpenAIError> {
     let client = OpenAIClient::new(None)?; // Reads API key from OPENAI_API_KEY
 
     let request = CreateEmbeddingsRequest {
-        model: Model::TextEmbeddingAda002,
+        model: Model::TextEmbedding3Small,
         input: EmbeddingsInput::String("Hello world".to_string()),
         user: None,
     };

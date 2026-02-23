@@ -166,7 +166,7 @@ pub struct ModerationCategoryScores {
 ///
 /// # Parameters
 ///
-/// * `client` - The [`OpenAIClient`](crate::config::OpenAIClient) to use for the request.
+/// * `client` - The [`OpenAIClient`] to use for the request.
 /// * `request` - A [`CreateModerationRequest`] specifying the input text(s) and an optional model.
 ///
 /// # Returns

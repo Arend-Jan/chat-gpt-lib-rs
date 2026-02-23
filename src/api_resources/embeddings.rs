@@ -8,7 +8,7 @@
 //! # Overview
 //!
 //! The core usage involves calling [`create_embeddings`] with a [`CreateEmbeddingsRequest`],
-//! which includes the `model` name (e.g., `"text-embedding-ada-002"`) and the input text(s).
+//! which includes the `model` name (e.g., `"text-embedding-3-small"`) and the input text(s).
 //!
 //! ```rust,no_run
 //! use chat_gpt_lib_rs::api_resources::embeddings::{create_embeddings, CreateEmbeddingsRequest, EmbeddingsInput};
@@ -20,7 +20,7 @@
 //!     let client = OpenAIClient::new(None)?; // Reads API key from OPENAI_API_KEY
 //!
 //!     let request = CreateEmbeddingsRequest {
-//!         model: "text-embedding-ada-002".into(),
+//!         model: "text-embedding-3-small".into(),
 //!         input: EmbeddingsInput::String("Hello world".to_string()),
 //!         user: None,
 //!     };
@@ -75,7 +75,7 @@ pub enum EmbeddingsInput {
 #[derive(Debug, Serialize, Clone)]
 pub struct CreateEmbeddingsRequest {
     /// **Required.** The ID of the model to use.
-    /// For example: `"text-embedding-ada-002"`.
+    /// For example: `"text-embedding-3-small"`.
     pub model: Model,
     /// **Required.** The input text or tokens for which you want to generate embeddings.
     pub input: EmbeddingsInput,
@@ -128,7 +128,7 @@ pub struct EmbeddingsUsage {
 ///
 /// # Parameters
 ///
-/// * `client` - The [`OpenAIClient`](crate::config::OpenAIClient) to use for the request.
+/// * `client` - The [`OpenAIClient`] to use for the request.
 /// * `request` - A [`CreateEmbeddingsRequest`] specifying the model and input(s).
 ///
 /// # Returns
@@ -187,7 +187,7 @@ mod tests {
                     "embedding": [0.111, 0.222, 0.333]
                 }
             ],
-            "model": "text-embedding-ada-002",
+            "model": "text-embedding-3-small",
             "usage": {
                 "prompt_tokens": 5,
                 "total_tokens": 5
@@ -208,7 +208,7 @@ mod tests {
             .unwrap();
 
         let req = CreateEmbeddingsRequest {
-            model: "text-embedding-ada-002".into(),
+            model: "text-embedding-3-small".into(),
             input: EmbeddingsInput::Strings(vec!["Hello".to_string(), "World".to_string()]),
             user: None,
         };
@@ -219,7 +219,7 @@ mod tests {
         let resp = result.unwrap();
         assert_eq!(resp.object, "list");
         assert_eq!(resp.data.len(), 2);
-        assert_eq!(resp.model, "text-embedding-ada-002".into());
+        assert_eq!(resp.model, "text-embedding-3-small".into());
 
         let first = &resp.data[0];
         assert_eq!(first.object, "embedding");
@@ -279,7 +279,7 @@ mod tests {
         let malformed_json = r#"{
             "object": "list",
             "data": "should be an array of embeddings, not a string",
-            "model": "text-embedding-ada-002"
+            "model": "text-embedding-3-small"
         }"#;
 
         Mock::given(method("POST"))
@@ -297,7 +297,7 @@ mod tests {
             .unwrap();
 
         let req = CreateEmbeddingsRequest {
-            model: "text-embedding-ada-002".into(),
+            model: "text-embedding-3-small".into(),
             input: EmbeddingsInput::String("Hello".to_string()),
             user: None,
         };

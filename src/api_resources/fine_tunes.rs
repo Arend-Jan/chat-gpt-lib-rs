@@ -43,7 +43,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::api::{get_json, parse_error_response, post_json};
+use crate::api::{delete_json, get_json, post_json};
 use crate::config::OpenAIClient;
 use crate::error::OpenAIError;
 
@@ -158,7 +158,7 @@ pub struct FineTuneList {
 ///
 /// # Parameters
 ///
-/// * `client` - The [`OpenAIClient`](crate::config::OpenAIClient).
+/// * `client` - The [`OpenAIClient`].
 /// * `request` - The [`CreateFineTuneRequest`] with mandatory `training_file` and other optional fields.
 ///
 /// # Returns
@@ -285,26 +285,8 @@ pub async fn delete_fine_tune_model(
     client: &OpenAIClient,
     model: &str,
 ) -> Result<DeleteFineTuneModelResponse, OpenAIError> {
-    // Build the DELETE request
     let endpoint = format!("models/{}", model);
-    let url = format!("{}/{}", client.base_url().trim_end_matches('/'), endpoint);
-
-    let response = client
-        .http_client
-        .delete(&url)
-        .bearer_auth(client.api_key())
-        .send()
-        .await?; // Network/HTTP-layer error if this fails
-
-    // Check if the status code indicates success
-    if !response.status().is_success() {
-        // Attempt to parse a JSON error body in OpenAI’s format
-        return Err(parse_error_response(response).await?);
-    }
-
-    // Otherwise, parse success body
-    let response_body = response.json::<DeleteFineTuneModelResponse>().await?;
-    Ok(response_body)
+    delete_json(client, &endpoint).await
 }
 /// Response returned after deleting a fine-tuned model.
 #[derive(Debug, Deserialize)]

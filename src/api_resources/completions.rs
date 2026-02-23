@@ -9,7 +9,7 @@
 //! # Overview
 //!
 //! The Completions API can generate or manipulate text based on a given prompt. You specify a model
-//! (e.g., `"gpt-3.5-turbo-instruct"`), a prompt, and various parameters like `max_tokens` and
+//! (e.g., `"gpt-3.5-turbo"`), a prompt, and various parameters like `max_tokens` and
 //! `temperature`.  
 //! **Important**: This request object allows for advanced configurations such as
 //! `best_of`, `seed`, and `logit_bias`. Use them carefully, especially if they can consume many
@@ -27,7 +27,7 @@
 //!     let client = OpenAIClient::new(None)?; // Reads API key from OPENAI_API_KEY
 //!
 //!     let request = CreateCompletionRequest {
-//!         model: "gpt-3.5-turbo-instruct".into(),
+//!         model: "gpt-3.5-turbo".into(),
 //!         // `PromptInput::String` variant if we just have a single prompt text
 //!         prompt: Some(PromptInput::String("Tell me a joke about cats".to_string())),
 //!         max_tokens: Some(50),
@@ -105,8 +105,8 @@ pub struct ChatCompletionStreamOptions {
 /// including fields such as `best_of`, `seed`, and `suffix`.
 #[derive(Debug, Serialize, Default, Clone)]
 pub struct CreateCompletionRequest {
-    /// **Required.** ID of the model to use. For example: `"gpt-3.5-turbo-instruct"`, `"davinci-002"`,
-    /// or `"text-davinci-003"`.
+    /// **Required.** ID of the model to use. For example: `"gpt-3.5-turbo"`, `"gpt-4o-mini"`,
+    /// or `"gpt-5-mini"`.
     pub model: Model,
 
     /// **Required.** The prompt(s) to generate completions for.
@@ -215,8 +215,7 @@ pub struct CreateCompletionRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub seed: Option<i64>,
 
-    /// The suffix that comes after a completion of inserted text. This parameter is only supported
-    /// for `gpt-3.5-turbo-instruct`. Defaults to `null`.
+    /// The suffix that comes after a completion of inserted text.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
 }
@@ -307,7 +306,7 @@ pub struct CompletionUsage {
 ///
 /// # Parameters
 ///
-/// * `client` - The [`OpenAIClient`](crate::config::OpenAIClient) to use for the request.
+/// * `client` - The [`OpenAIClient`] to use for the request.
 /// * `request` - A [`CreateCompletionRequest`] specifying the prompt, model, and additional parameters.
 ///
 /// # Returns
@@ -372,7 +371,7 @@ mod tests {
             "id": "cmpl-12345",
             "object": "text_completion",
             "created": 1673643147,
-            "model": "text-davinci-003",
+            "model": "gpt-3.5-turbo",
             "choices": [{
                 "text": "This is a funny cat joke!",
                 "index": 0,
@@ -401,7 +400,7 @@ mod tests {
 
         // Create a minimal request
         let req = CreateCompletionRequest {
-            model: "text-davinci-003".into(),
+            model: "gpt-3.5-turbo".into(),
             prompt: Some(PromptInput::String("Tell me a cat joke".into())),
             max_tokens: Some(20),
             ..Default::default()
@@ -414,7 +413,7 @@ mod tests {
         let resp = result.unwrap();
         assert_eq!(resp.id, "cmpl-12345");
         assert_eq!(resp.object, "text_completion");
-        assert_eq!(resp.model, "text-davinci-003".into());
+        assert_eq!(resp.model, "gpt-3.5-turbo".into());
         assert_eq!(resp.choices.len(), 1);
 
         let choice = &resp.choices[0];
@@ -476,7 +475,7 @@ mod tests {
             "id": "cmpl-12345",
             "object": "text_completion",
             "created": "invalid_number",
-            "model": "text-davinci-003",
+            "model": "gpt-3.5-turbo",
             "choices": "should_be_array"
         }"#;
 
@@ -495,7 +494,7 @@ mod tests {
             .unwrap();
 
         let req = CreateCompletionRequest {
-            model: "text-davinci-003".into(),
+            model: "gpt-3.5-turbo".into(),
             prompt: Some(PromptInput::String("Hello".into())),
             ..Default::default()
         };

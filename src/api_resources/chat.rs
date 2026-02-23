@@ -24,7 +24,7 @@
 //!     let client = OpenAIClient::new(None)?; // Reads API key from OPENAI_API_KEY
 //!
 //!     let request = CreateChatCompletionRequest {
-//!         model: Model::O1Mini,
+//!         model: Model::Gpt4oMini,
 //!         messages: vec![
 //!             ChatMessage {
 //!                 role: ChatRole::System,
@@ -103,7 +103,7 @@ pub struct ChatMessage {
 /// A request struct for creating chat completions with the OpenAI Chat Completions API.
 ///
 /// # Fields
-/// - `model`: The ID of the model to use (e.g., "gpt-3.5-turbo").
+/// - `model`: The ID of the model to use (e.g., "gpt-4o-mini").
 /// - `messages`: A list of [`ChatMessage`] items providing the conversation history.
 /// - `stream`: Whether or not to stream responses via server-sent events.
 /// - `max_tokens`, `temperature`, `top_p`, etc.: Parameters controlling the generation.
@@ -112,7 +112,7 @@ pub struct ChatMessage {
 #[derive(Debug, Serialize, Default, Clone)]
 pub struct CreateChatCompletionRequest {
     /// **Required**. The model used for this chat request.
-    /// Examples: "Model::O1Mini", "Model::Other("gpt-4".to_string)".
+    /// Examples: "Model::Gpt4oMini", "Model::Other("gpt-4o-mini".to_string())".
     pub model: Model,
 
     /// **Required**. The messages that make up the conversation so far.
@@ -238,7 +238,7 @@ pub struct CreateChatCompletionChunk {
 /// Creates a chat-based completion using the [OpenAI Chat Completions API](https://platform.openai.com/docs/api-reference/chat).
 ///
 /// # Parameters
-/// * `client` - The [`OpenAIClient`](crate::config::OpenAIClient) to use for the request.
+/// * `client` - The [`OpenAIClient`] to use for the request.
 /// * `request` - A [`CreateChatCompletionRequest`] specifying the messages, model, and other parameters.
 ///
 /// # Returns

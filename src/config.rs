@@ -54,7 +54,7 @@ pub const DEFAULT_BASE_URL: &str = "https://api.openai.com/v1/";
 /// 2) The builder pattern via [`OpenAIClient::builder`].
 #[derive(Clone, Debug)]
 pub struct OpenAIClient {
-    /// The full base URL used for OpenAI endpoints (e.g. "https://api.openai.com/v1/").
+    /// The full base URL used for OpenAI endpoints (e.g. <https://api.openai.com/v1/>).
     base_url: String,
     /// The API key used for authentication (e.g., "sk-...").
     api_key: String,

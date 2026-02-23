@@ -26,7 +26,7 @@
 //!     let client = OpenAIClient::new(Some("sk-...".to_string()))?;
 //!
 //!     // Now you can make calls like:
-//!     // let response = client.create_completion("text-davinci-003", "Hello, world!", 50, 0.7).await?;
+//!     // let response = client.create_completion("gpt-3.5-turbo", "Hello, world!", 50, 0.7).await?;
 //!     // println!("Completion: {}", response);
 //!
 //!     Ok(())
@@ -49,7 +49,7 @@
 //! ## Roadmap
 //!
 //! 1. Implement all major endpoints (e.g. Completions, Chat, Embeddings, Files, Fine-tunes, Moderations).
-//! 2. Provide detailed logging with [`log`](https://crates.io/crates/log) and [`env_logger`](https://crates.io/crates/env_logger).
+//! 2. Provide optional detailed logging/tracing integration.
 //! 3. Offer improved error handling by parsing OpenAI error fields directly.
 //! 4. Provide thorough documentation and examples.
 //!

@@ -29,9 +29,9 @@ async fn main() -> Result<(), OpenAIError> {
     // about ice cream, as an example:
     let prompt_text = "Write a advertisement for a new flavor of ice cream.";
 
-    // Build a request using a completions model (e.g. text-davinci-003)
+    // Build a request using a completions-capable model.
     let request = CreateCompletionRequest {
-        model: "gpt-3.5-turbo-instruct".into(),
+        model: "gpt-3.5-turbo".into(),
         prompt: Some(PromptInput::String(prompt_text.to_owned())),
         max_tokens: Some(512),
         stream: Some(true), // Enable streaming responses.
