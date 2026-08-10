@@ -252,10 +252,19 @@ pub async fn create_chat_completion(
     client: &OpenAIClient,
     request: &CreateChatCompletionRequest,
 ) -> Result<CreateChatCompletionResponse, OpenAIError> {
-    // According to the OpenAI docs, the endpoint for chat completions is:
-    // POST /v1/chat/completions
     let endpoint = "chat/completions";
-    post_json(client, endpoint, request).await
+    let mut req = request.clone();
+    let result = post_json(client, endpoint, &req).await;
+
+    match result {
+        Ok(response) => Ok(response),
+        Err(OpenAIError::APIError { ref code, .. }) if code.as_deref() == Some("model_not_found") => {
+            // Automatic downgrade to a fallback model if the selected one is unavailable
+            req.model = Model::Other("gpt-3.5-turbo".to_string());
+            post_json(client, endpoint, &req).await
+        }
+        Err(e) => Err(e),
+    }
 }
 
 /// Creates a streaming chat-based completion using the OpenAI Chat Completions API.
